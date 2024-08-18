@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SourceFileCollection xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Profile>Reach</Profile>
+  <Platform>Windows</Platform>
+  <Config />
+  <SourceFiles>
+    <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/brush.png</File>
+    <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/coin2_20x20.png</File>
+    <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/Font.spritefont</File>
+    <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/GoblinMechRiderSpriteSheet.png</File>
+    <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/Green Portal Sprite Sheet.png</File>
+    <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/Purple Portal Sprite Sheet.png</File>
+    <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/ScoreFont.spritefont</File>
+    <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/Tiles.png</File>
+  </SourceFiles>
+  <DestFiles>
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+  </DestFiles>
+</SourceFileCollection>
