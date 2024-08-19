@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PipelineBuildEvent xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <SourceFile>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/DemonSpritesheet.png</SourceFile>
-  <SourceTime>2024-08-19T12:43:54.6313512+02:00</SourceTime>
-  <DestFile>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/bin/Windows/Content/DemonSpritesheet.xnb</DestFile>
-  <DestTime>2024-08-19T12:51:58.1615275+02:00</DestTime>
+  <SourceFile>C:/Users/Owen/Desktop/DamnedOfTheDeath FinalProject Not SOLID/DamnedOfTheDeath/DamnedOfTheDeath/Content/DemonSpritesheet.png</SourceFile>
+  <SourceTime>2024-08-19T12:43:54+02:00</SourceTime>
+  <DestFile>C:/Users/Owen/Desktop/DamnedOfTheDeath FinalProject Not SOLID/DamnedOfTheDeath/DamnedOfTheDeath/Content/bin/Windows/Content/DemonSpritesheet.xnb</DestFile>
+  <DestTime>2024-08-19T17:52:28.1373767+02:00</DestTime>
   <Importer>TextureImporter</Importer>
   <ImporterTime>2022-07-26T13:44:56+02:00</ImporterTime>
   <Processor>TextureProcessor</Processor>

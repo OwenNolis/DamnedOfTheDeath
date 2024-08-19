@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Owen\\Desktop\\DamnedOfTheDeath\\DamnedOfTheDeath\\DamnedOfTheDeath.csproj": {}
+    "C:\\Users\\Owen\\Desktop\\DamnedOfTheDeath FinalProject Not SOLID\\DamnedOfTheDeath\\DamnedOfTheDeath\\DamnedOfTheDeath.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Owen\\Desktop\\DamnedOfTheDeath\\DamnedOfTheDeath\\DamnedOfTheDeath.csproj": {
+    "C:\\Users\\Owen\\Desktop\\DamnedOfTheDeath FinalProject Not SOLID\\DamnedOfTheDeath\\DamnedOfTheDeath\\DamnedOfTheDeath.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Owen\\Desktop\\DamnedOfTheDeath\\DamnedOfTheDeath\\DamnedOfTheDeath.csproj",
+        "projectUniqueName": "C:\\Users\\Owen\\Desktop\\DamnedOfTheDeath FinalProject Not SOLID\\DamnedOfTheDeath\\DamnedOfTheDeath\\DamnedOfTheDeath.csproj",
         "projectName": "DamnedOfTheDeath",
-        "projectPath": "C:\\Users\\Owen\\Desktop\\DamnedOfTheDeath\\DamnedOfTheDeath\\DamnedOfTheDeath.csproj",
+        "projectPath": "C:\\Users\\Owen\\Desktop\\DamnedOfTheDeath FinalProject Not SOLID\\DamnedOfTheDeath\\DamnedOfTheDeath\\DamnedOfTheDeath.csproj",
         "packagesPath": "C:\\Users\\Owen\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Owen\\Desktop\\DamnedOfTheDeath\\DamnedOfTheDeath\\obj\\",
+        "outputPath": "C:\\Users\\Owen\\Desktop\\DamnedOfTheDeath FinalProject Not SOLID\\DamnedOfTheDeath\\DamnedOfTheDeath\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

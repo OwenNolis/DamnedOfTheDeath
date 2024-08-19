@@ -50,3 +50,55 @@ C:\Users\Owen\Desktop\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows
 C:\Users\Owen\Desktop\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\FireTrap.xnb
 C:\Users\Owen\Desktop\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\AlienSpritesheet.xnb
 C:\Users\Owen\Desktop\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\DemonSpritesheet.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\AlienSpritesheet.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\brush.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\coin2_20x20.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\DawnBackground.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\DemonSpritesheet.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\FireTrap.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\Font.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\GoblinMechRiderSpriteSheet.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\Green Portal Sprite Sheet.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\Hover@3x.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\Purple Portal Sprite Sheet.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\ScoreFont.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\Tiles.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\TitleFont.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\DamnedOfTheDeath.exe
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\DamnedOfTheDeath.deps.json
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\DamnedOfTheDeath.runtimeconfig.json
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\DamnedOfTheDeath.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\DamnedOfTheDeath.pdb
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Microsoft.CodeAnalysis.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Microsoft.CodeAnalysis.CSharp.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Microsoft.CodeAnalysis.VisualBasic.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\MonoGame.Framework.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Newtonsoft.Json.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\SharpDX.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\SharpDX.Direct2D1.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\SharpDX.Direct3D11.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\SharpDX.Direct3D9.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\SharpDX.DXGI.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\SharpDX.Mathematics.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\SharpDX.MediaFoundation.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\SharpDX.XAudio2.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\SharpDX.XInput.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\runtimes\debian-x64\native\libuv.so
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\runtimes\fedora-x64\native\libuv.so
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\runtimes\opensuse-x64\native\libuv.so
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\runtimes\osx\native\libuv.dylib
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\runtimes\rhel-x64\native\libuv.so
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\runtimes\win7-arm\native\libuv.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\runtimes\win7-x64\native\libuv.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\runtimes\win7-x86\native\libuv.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\obj\Debug\net6.0-windows\DamnedOfTheDeath.csproj.AssemblyReference.cache
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\obj\Debug\net6.0-windows\DamnedOfTheDeath.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\obj\Debug\net6.0-windows\DamnedOfTheDeath.AssemblyInfoInputs.cache
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\obj\Debug\net6.0-windows\DamnedOfTheDeath.AssemblyInfo.cs
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\obj\Debug\net6.0-windows\DamnedOfTheDeath.csproj.CoreCompileInputs.cache
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\obj\Debug\net6.0-windows\DamnedOfTheDeath.csproj.CopyComplete
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\obj\Debug\net6.0-windows\DamnedOfTheDeath.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\obj\Debug\net6.0-windows\refint\DamnedOfTheDeath.dll
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\obj\Debug\net6.0-windows\DamnedOfTheDeath.pdb
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\obj\Debug\net6.0-windows\DamnedOfTheDeath.genruntimeconfig.cache
+C:\Users\Owen\Desktop\DamnedOfTheDeath FinalProject Not SOLID\DamnedOfTheDeath\DamnedOfTheDeath\obj\Debug\net6.0-windows\ref\DamnedOfTheDeath.dll

@@ -15,6 +15,7 @@ using SharpDX.Direct3D9;
 using DamnedOfTheDeath.UI;
 using DamnedOfTheDeath.Core.Collectibles;
 using DamnedOfTheDeath.Core.enemies;
+using DamnedOfTheDeath.Core.entities;
 
 namespace DamnedOfTheDeath
 {
@@ -23,47 +24,17 @@ namespace DamnedOfTheDeath
         #region Variables
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
-
-        #region PurplePortalVariables
-        // PurplePortal variables
-        private Texture2D _purplePortalSpriteSheet;
-        private Rectangle[] _purplePortalFrames;
-        private int _purplePortalFrameWidth = 64; // 512px / 8 columns
-        private int _purplePortalFrameHeight = 64; // 192px / 3 rows
-        private int _purplePortalCurrentFrame;
-        private Vector2 _purplePortalPosition = new Vector2(1530, 370); // Adjust this to where you want the portal on the right
-        private double _purplePortalTimeElapsed;
-        private double _purplePortalTimeToUpdate = 0.1; // Adjust the speed of the animation
-        // PurplePortal hitbox
-        private Rectangle _purplePortalHitbox;
-        private Texture2D _hitboxPurplePortalTexture;
-        #endregion
-
-        #region GreenPortalVariables
-        // GreenPrtal Variables
-        private Texture2D _greenPortalSpriteSheet;
-        private Rectangle[] _greenPortalFrames;
-        private int _greenPortalFrameWidth = 64; // 512px / 8 columns
-        private int _greenPortalFrameHeight = 64; // 192px / 3 rows
-        private int _greenPortalCurrentFrame;
-        private Vector2 _greenPortalPosition = new Vector2(1530, 300); // Adjust this to where you want the portal on the right
-        private double _greenPortalTimeElapsed;
-        private double _greenPortalTimeToUpdate = 0.1; // Adjust the speed of the animation
-        // PurplePortal hitbox
-        private Rectangle _greenPortalHitbox;
-        private Texture2D _hitboxGreenPortalTexture;
-        #endregion
+        private PurplePortal _purplePortal;
+        private GreenPortal _greenPortal;
+        private Texture2D _fireTrapTexture;
+        private List<FireTrap> _fireTrapsLevel1;
+        private List<FireTrap> _fireTrapsLevel2;
 
         #region CoinVariables
         List<Coin> _coinsLevel1;  // List to hold multiple coins
         List<Coin> _coinsLevel2;  // List to hold multiple coins
         int _score;
         const int MaxScore = 10;
-        #endregion
-
-        #region FireTrapVariables
-        List<FireTrap> _fireTrapsLevel1;
-        List<FireTrap> _fireTrapsLevel2;
         #endregion
 
         #region AlienVariables
@@ -308,17 +279,37 @@ namespace DamnedOfTheDeath
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
+            // Load the PurplePortal sprite sheet
+            var purplePortalSpriteSheet = Content.Load<Texture2D>("Purple Portal Sprite Sheet");
+            var purplePortalFrames = CreatePortalFrames(purplePortalSpriteSheet, 8, 64, 64);
+            var hitboxTexture = CreateHitboxTexture();
+
+            // Create PurplePortal instance
+            _purplePortal = new PurplePortal(purplePortalSpriteSheet, purplePortalFrames, new Vector2(1530, 370), 0.1, _spriteBatch, hitboxTexture);
+
+            // Load the GreenPortal sprite sheet
+            var greenPortalSpriteSheet = Content.Load<Texture2D>("Green Portal Sprite Sheet");
+            var greenPortalFrames = CreatePortalFrames(greenPortalSpriteSheet, 8, 64, 64);
+
+            // Create GreenPortal instance
+            _greenPortal = new GreenPortal(greenPortalSpriteSheet, greenPortalFrames, new Vector2(1530, 300), 0.1, _spriteBatch, hitboxTexture);
+
+            _fireTrapTexture = Content.Load<Texture2D>("FireTrap");
+
+            // Initialize fire traps for level 1
+            _fireTrapsLevel1 = new List<FireTrap>
+        {
+            new FireTrap(_fireTrapTexture, 32, 41, 14, 0.07f) { Position = new Vector2(540, 350) }
+        };
+
+            // Initialize fire traps for level 2
+            _fireTrapsLevel2 = new List<FireTrap>
+        {
+            new FireTrap(_fireTrapTexture, 32, 41, 14, 0.07f) { Position = new Vector2(1035, 320) }
+        };
+
             // Load the start screen background
             _background = Content.Load<Texture2D>("DawnBackground");
-
-            #region WhiteTexture
-            // Create a 1x1 white texture to use for drawing rectangles
-            _hitboxPurplePortalTexture = new Texture2D(GraphicsDevice, 1, 1);
-            _hitboxPurplePortalTexture.SetData(new[] { Color.White });
-
-            _hitboxGreenPortalTexture = new Texture2D(GraphicsDevice, 1, 1);
-            _hitboxGreenPortalTexture.SetData(new[] { Color.White });
-            #endregion
 
             #region Player
             // Load the player's sprite sheet
@@ -346,58 +337,6 @@ namespace DamnedOfTheDeath
                 new Rectangle(800, 210, 120, 20),
                 new Rectangle(1060, 300, 190, 20),
             };
-            #endregion
-
-            #region PurplePortal
-            // Load the PurplePortal sprite sheet
-            _purplePortalSpriteSheet = Content.Load<Texture2D>("Purple Portal Sprite Sheet");
-
-            // Initialize the PurplePortal hitbox
-            _purplePortalHitbox = new Rectangle((int)_purplePortalPosition.X, (int)_purplePortalPosition.Y, _purplePortalFrameWidth, _purplePortalFrameHeight);
-
-            // Example: Initialize the hitbox for the other sprite (e.g., a portal)
-            //_purplePortalHitbox = new Rectangle((int)_purplePortalPosition.X, (int)_purplePortalPosition.Y, _purplePortalFrameWidth / 2, _purplePortalFrameHeight); // Adjust as necessary
-
-            // Initialize the PurplePortal frames for the idle animation (first row)
-            _purplePortalFrames = new Rectangle[8];
-            for (int i = 0; i < 8; i++)
-            {
-                _purplePortalFrames[i] = new Rectangle(i * _purplePortalFrameWidth, 0, _purplePortalFrameWidth, _purplePortalFrameHeight);
-            }
-            #endregion
-
-            #region GreenPortal
-            // Load the GreenPortal sprite sheet
-            _greenPortalSpriteSheet = Content.Load<Texture2D>("Green Portal Sprite Sheet");
-
-            // Initialize the GreenPortal hitbox
-            _greenPortalHitbox = new Rectangle((int)_greenPortalPosition.X, (int)_greenPortalPosition.Y, _greenPortalFrameWidth, _greenPortalFrameHeight);
-
-            // Initialize the GreenPortal frames for the idle animation (first row)
-            _greenPortalFrames = new Rectangle[8];
-            for (int i = 0; i < 8; i++)
-            {
-                _greenPortalFrames[i] = new Rectangle(i * _greenPortalFrameWidth, 0, _greenPortalFrameWidth, _greenPortalFrameHeight);
-            }
-            #endregion
-
-            #region FireTrap
-            // Load the fire trap texture
-            Texture2D _fireTrapTexture = Content.Load<Texture2D>("FireTrap");
-
-            // Initialize the list of fire traps for level 1
-            _fireTrapsLevel1 = new List<FireTrap>()
-            {
-                // Add multiple fire traps with different positions
-                new FireTrap(_fireTrapTexture, 32, 41, 14, 0.07f) { _fireTrapPosition = new Vector2(540, 350) },
-            };
-
-            // Initialize the list of fire traps for level 2
-            _fireTrapsLevel2 = new List<FireTrap>()
-            {
-                // Add multiple fire traps with different positions
-            new FireTrap(_fireTrapTexture, 32, 41, 14, 0.07f) { _fireTrapPosition = new Vector2(1035, 320) },
-        };
             #endregion
 
             #region Alien
@@ -579,7 +518,6 @@ namespace DamnedOfTheDeath
                     _currentLevel = 1;
                     isLevel2Active = false;
                     UpdateCoins(_coinsLevel1, gameTime);
-                    UpdateFireTraps(_fireTrapsLevel1, gameTime);
                     _gameStarted = true;
 
                 }
@@ -588,7 +526,6 @@ namespace DamnedOfTheDeath
                     _currentLevel = 1;
                     isLevel2Active = false;
                     UpdateCoins(_coinsLevel1, gameTime);
-                    UpdateFireTraps(_fireTrapsLevel1, gameTime);
                     _gameStarted = true;
                 }
                 else if (startScreenResult == 3)
@@ -596,7 +533,6 @@ namespace DamnedOfTheDeath
                     _currentLevel = 2;
                     isLevel2Active = true;
                     UpdateCoins(_coinsLevel2, gameTime);
-                    UpdateFireTraps(_fireTrapsLevel2, gameTime);
                     _gameStarted = true;
                 }
             }
@@ -704,12 +640,6 @@ namespace DamnedOfTheDeath
 
                     #endregion
 
-                    #region UpdatePurplePortalHitbox
-                    // Update the other sprite's hitbox position
-                    _purplePortalHitbox.X = (int)_purplePortalPosition.X;
-                    _purplePortalHitbox.Y = (int)_purplePortalPosition.Y;
-                    #endregion
-
                     #region Boundaries
                     // Define the margin for the left and right boundaries
                     int leftMargin = -50;  // Allow some space off the left side
@@ -779,40 +709,6 @@ namespace DamnedOfTheDeath
                     }
                     #endregion
 
-                    #region CollisionPlayerAndPurplePortal
-                    // Check for collisions with between player and purple portal only if on level 1
-                    if (_currentLevel == 1 || isLevel2Active == false)
-                    {
-                        // Update portal animation if necessary
-                        UpdatePurplePortalAnimation(gameTime);
-
-                        // Check for collision between player and portal
-                        if (_playerHitbox.Intersects(_purplePortalHitbox))
-                        {
-                            // Move to level 2
-                            _currentLevel = 2;
-                            LoadLevel2();
-                        }
-                    }
-                    #endregion
-
-                    #region CollisionPlayerAndGreenPortal
-                    // Check for collisions with between player and green portal only if on level 2
-                    if (_currentLevel == 2 || isLevel2Active == true)
-                    {
-                        // Update portal animation if necessary
-                        UpdateGreenPortalAnimation(gameTime);
-
-                        // Check for collision between player and portal
-                        if (_playerHitbox.Intersects(_greenPortalHitbox))
-                        {
-                            // Move to level 1
-                            _currentLevel = 1;
-                            LoadLevel1();
-                        }
-                    }
-                    #endregion
-
                     #region UpdateCurrentLevel
                     // Update the current level (this will draw the new level after transition)
                     if (isLevel2Active)
@@ -847,18 +743,6 @@ namespace DamnedOfTheDeath
                     if (_score >= MaxScore)
                     {
                         _gameWon = true;
-                    }
-                    #endregion
-
-                    #region UpdateFireTraps
-                    // Update the coins based on the current level
-                    if (_currentLevel == 1)
-                    {
-                        UpdateFireTraps(_fireTrapsLevel1, gameTime);
-                    }
-                    else if (_currentLevel == 2)
-                    {
-                        UpdateFireTraps(_fireTrapsLevel2, gameTime);
                     }
                     #endregion
 
@@ -921,6 +805,33 @@ namespace DamnedOfTheDeath
                         }
                     }
                     #endregion
+
+                    if (_currentLevel == 1 || !isLevel2Active)
+                    {
+                        _purplePortal.Update(gameTime);
+
+                        // Check for collision between player and purple portal
+                        if (_playerHitbox.Intersects(_purplePortal.GetHitbox()))
+                        {
+                            _currentLevel = 2;
+                            LoadLevel2();
+                        }
+                    }
+
+                    if (_currentLevel == 2 || isLevel2Active)
+                    {
+                        _greenPortal.Update(gameTime);
+
+                        // Check for collision between player and green portal
+                        if (_playerHitbox.Intersects(_greenPortal.GetHitbox()))
+                        {
+                            _currentLevel = 1;
+                            LoadLevel1();
+                        }
+                    }
+
+                    List<FireTrap> currentFireTraps = _currentLevel == 1 ? _fireTrapsLevel1 : _fireTrapsLevel2;
+                    UpdateFireTraps(currentFireTraps, gameTime);
                 }
 
                 #region _gameLost
@@ -970,9 +881,8 @@ namespace DamnedOfTheDeath
                 {
                     _spriteBatch.Draw(_levelsBackground, new Rectangle(0, 0, 1600, 480), Color.White);
                     DrawLevel2(gameTime);
-                    DrawGreenPortal();
+                    _greenPortal.Draw();
                     DrawCoins(_coinsLevel2);
-                    DrawFireTraps(_fireTrapsLevel2);
                     alienLevel2.Draw(_spriteBatch);
                     demonLevel2.Draw(_spriteBatch);
 
@@ -986,9 +896,8 @@ namespace DamnedOfTheDeath
                 {
                     _spriteBatch.Draw(_levelsBackground, new Rectangle(0, 0, 1600, 480), Color.White);
                     DrawLevel(gameTime);
-                    DrawPurplePortal();
+                    _purplePortal.Draw();
                     DrawCoins(_coinsLevel1);
-                    DrawFireTraps(_fireTrapsLevel1);
                     alienLevel1.Draw(_spriteBatch);
                     demonLevel1.Draw(_spriteBatch);
 
@@ -997,6 +906,9 @@ namespace DamnedOfTheDeath
                         _spriteBatch.Draw(groundTexture, groundcollision, Color.White * 0.5f);
                     }
                 }
+
+                List<FireTrap> currentFireTraps = _currentLevel == 1 ? _fireTrapsLevel1 : _fireTrapsLevel2;
+                DrawFireTraps(currentFireTraps);
 
                 if (_isVisible)
                 {
@@ -1018,6 +930,49 @@ namespace DamnedOfTheDeath
             _spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+
+        private Rectangle[] CreatePortalFrames(Texture2D spriteSheet, int frameCount, int frameWidth, int frameHeight)
+        {
+            var frames = new Rectangle[frameCount];
+            for (int i = 0; i < frameCount; i++)
+            {
+                frames[i] = new Rectangle(i * frameWidth, 0, frameWidth, frameHeight);
+            }
+            return frames;
+        }
+
+        private Texture2D CreateHitboxTexture()
+        {
+            var texture = new Texture2D(GraphicsDevice, 1, 1);
+            texture.SetData(new[] { Color.White });
+            return texture;
+        }
+
+        private void UpdateFireTraps(IEnumerable<FireTrap> fireTraps, GameTime gameTime)
+        {
+            foreach (var fireTrap in fireTraps)
+            {
+                fireTrap.Update(gameTime);
+
+                // Check for collision with the player
+                if (fireTrap.GetHitbox().Intersects(_playerHitbox) && !_isInvulnerable)
+                {
+                    _playerHealth -= 1;
+                    _isInvulnerable = true;
+                    _invulnerabilityTime = 3.0; // 3 seconds of invulnerability
+                    _flickerTime = 0;
+                    _isVisible = true; // Reset visibility
+                }
+            }
+        }
+
+        private void DrawFireTraps(IEnumerable<FireTrap> fireTraps)
+        {
+            foreach (var fireTrap in fireTraps)
+            {
+                fireTrap.Draw(_spriteBatch);
+            }
         }
 
         private void CheckCollision(Rectangle demonHitbox)
@@ -1096,40 +1051,12 @@ namespace DamnedOfTheDeath
             }
         }
 
-        private void UpdateFireTraps(List<FireTrap> fireTraps, GameTime gameTime)
-        {
-            // Update all firetraps in the current list and check for collision
-            foreach (var firetrap in fireTraps)
-            {
-                firetrap.Update(gameTime);
-
-                // Check for collision between player and each firetrap
-                if (firetrap.GetHitbox().Intersects(_playerHitbox) && !_isInvulnerable)
-                {
-                    _playerHealth -= 1;
-                    _isInvulnerable = true;
-                    _invulnerabilityTime = 3.0; // 3 seconds of invulnerability
-                    _flickerTime = 0;
-                    _isVisible = true; // Reset visibility
-                }
-            }
-        }
-
         private void DrawCoins(List<Coin> coins)
         {
             // Draw all visible coins in the current list
             foreach (var coin in coins)
             {
                 coin.Draw(_spriteBatch);
-            }
-        }
-
-        private void DrawFireTraps(List<FireTrap> fireTraps)
-        {
-            // Draw all firetraps in the current list
-            foreach (var firetrap in fireTraps)
-            {
-                firetrap.Draw(_spriteBatch);
             }
         }
 
@@ -1224,24 +1151,6 @@ namespace DamnedOfTheDeath
             _spriteBatch.Draw(rect, _playerHitbox, Color.White * 0.5f);
         }
 
-        private void DrawPurplePortal()
-        {
-            // Draw the PurplePortal sprite
-            _spriteBatch.Draw(_purplePortalSpriteSheet, _purplePortalPosition, _purplePortalFrames[_purplePortalCurrentFrame], Color.White);
-
-            // Draw the hitbox for the portal in red
-            //_spriteBatch.Draw(_hitboxPurplePortalTexture, _purplePortalHitbox, Color.Purple * 0.5f); // semi-transparent red
-        }
-
-        private void DrawGreenPortal()
-        {
-            // Draw the GreenPortal sprite
-            _spriteBatch.Draw(_greenPortalSpriteSheet, _greenPortalPosition, _greenPortalFrames[_greenPortalCurrentFrame], Color.White);
-
-            // Draw the hitbox for the portal in red
-            //_spriteBatch.Draw(_hitboxGreenPortalTexture, _greenPortalHitbox, Color.Green * 0.5f); // semi-transparent red
-        }
-
         private void AnimateAttack(GameTime gameTime)
         {
             _timeSinceLastFrame += gameTime.ElapsedGameTime.TotalMilliseconds;
@@ -1270,40 +1179,6 @@ namespace DamnedOfTheDeath
                     _frame = 0;
 
                 _timeSinceLastFrame = 0;
-            }
-        }
-
-        private void UpdatePurplePortalAnimation(GameTime gameTime)
-        {
-            // Update the PurplePortal animation
-            _purplePortalTimeElapsed += gameTime.ElapsedGameTime.TotalSeconds;
-
-            if (_purplePortalTimeElapsed >= _purplePortalTimeToUpdate)
-            {
-                _purplePortalTimeElapsed -= _purplePortalTimeToUpdate;
-
-                _purplePortalCurrentFrame++;
-                if (_purplePortalCurrentFrame >= _purplePortalFrames.Length)
-                {
-                    _purplePortalCurrentFrame = 0;
-                }
-            }
-        }
-
-        private void UpdateGreenPortalAnimation(GameTime gameTime)
-        {
-            // Update the PurplePortal animation
-            _greenPortalTimeElapsed += gameTime.ElapsedGameTime.TotalSeconds;
-
-            if (_greenPortalTimeElapsed >= _greenPortalTimeToUpdate)
-            {
-                _greenPortalTimeElapsed -= _greenPortalTimeToUpdate;
-
-                _greenPortalCurrentFrame++;
-                if (_greenPortalCurrentFrame >= _greenPortalFrames.Length)
-                {
-                    _greenPortalCurrentFrame = 0;
-                }
             }
         }
 

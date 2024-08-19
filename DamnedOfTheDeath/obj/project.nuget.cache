@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "0hF3P6fE7iylc/vRclXxo/fiPG50n2OvFjgR5wynCKqF+6wxnQYFX3JDzA47P+3km9DmbqdFRvmw13Fv2nnY9g==",
+  "dgSpecHash": "mAYppxTXFRPTGkn4hWPcg0KijLzmvFoJnJT9J3O8DF6CN/6BdeVsQifn3DBGJqkrUW3TMWT80sJvO3o25vPrQQ==",
   "success": true,
-  "projectFilePath": "C:\\Users\\Owen\\Desktop\\DamnedOfTheDeath\\DamnedOfTheDeath\\DamnedOfTheDeath.csproj",
+  "projectFilePath": "C:\\Users\\Owen\\Desktop\\DamnedOfTheDeath FinalProject Not SOLID\\DamnedOfTheDeath\\DamnedOfTheDeath\\DamnedOfTheDeath.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Owen\\.nuget\\packages\\libuv\\1.9.1\\libuv.1.9.1.nupkg.sha512",
     "C:\\Users\\Owen\\.nuget\\packages\\microsoft.codeanalysis.analyzers\\1.1.0\\microsoft.codeanalysis.analyzers.1.1.0.nupkg.sha512",
