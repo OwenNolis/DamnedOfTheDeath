@@ -29,7 +29,7 @@ namespace DamnedOfTheDeath.UI
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.DrawString(_font, $"Score: {_score}/{MaxScore}", _scorePosition, Color.White);
+            spriteBatch.DrawString(_font, $"Score: {_score}/{MaxScore}", _scorePosition, Color.IndianRed);
         }
     }
 }

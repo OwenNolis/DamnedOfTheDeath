@@ -44,3 +44,9 @@ C:\Users\Owen\Desktop\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows
 C:\Users\Owen\Desktop\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\coin2_20x20.xnb
 C:\Users\Owen\Desktop\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\ScoreFont.xnb
 C:\Users\Owen\Desktop\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\Font.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\Hover@3x.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\DawnBackground.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\TitleFont.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\FireTrap.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\AlienSpritesheet.xnb
+C:\Users\Owen\Desktop\DamnedOfTheDeath\DamnedOfTheDeath\bin\Debug\net6.0-windows\Content\DemonSpritesheet.xnb

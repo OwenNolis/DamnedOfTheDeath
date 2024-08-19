@@ -13,68 +13,17 @@ using System.Diagnostics;
 using SharpDX.Direct2D1.Effects;
 using SharpDX.Direct3D9;
 using DamnedOfTheDeath.UI;
+using DamnedOfTheDeath.Core.Collectibles;
+using DamnedOfTheDeath.Core.enemies;
 
 namespace DamnedOfTheDeath
 {
-    public class Coin
-    {
-        private Texture2D _hitboxCoinTexture;
-        private int _frameWidth = 20; // 180px / 9 columns
-        private int _frameHeight = 20; // 20px / 1 rows
-        private int _currentFrame;
-        private int _totalFrames;
-        private float _frameTime;
-        private float _elapsedTime;
-
-        public Vector2 Position { get; set; }
-        public bool IsVisible { get; set; } = true; // Property to manage visibility
-
-        public Coin(Texture2D texture, int frameWidth, int frameHeight, int totalFrames, float frameTime)
-        {
-            _hitboxCoinTexture = texture;
-            _frameWidth = frameWidth;
-            _frameHeight = frameHeight;
-            _totalFrames = totalFrames;
-            _frameTime = frameTime;
-            _elapsedTime = 0f;
-            _currentFrame = 0;
-        }
-
-        public void Update(GameTime gameTime)
-        {
-            if (!IsVisible) return;
-
-            _elapsedTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-
-            if (_elapsedTime >= _frameTime)
-            {
-                _elapsedTime -= _frameTime;
-                _currentFrame = (_currentFrame + 1) % _totalFrames;
-            }
-        }
-
-        public void Draw(SpriteBatch spriteBatch)
-        {
-            if (!IsVisible) return;
-
-            int row = 0; // For a single row spritesheet
-            int column = _currentFrame;
-            Rectangle sourceRectangle = new Rectangle(column * _frameWidth, row * _frameHeight, _frameWidth, _frameHeight);
-            spriteBatch.Draw(_hitboxCoinTexture, Position, sourceRectangle, Color.White);
-        }
-
-        public Rectangle GetHitbox()
-        {
-            return new Rectangle((int)Position.X, (int)Position.Y, _frameWidth, _frameHeight);
-        }
-    }
-
     public class Game1 : Game
     {
         #region Variables
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
-        
+
         #region PurplePortalVariables
         // PurplePortal variables
         private Texture2D _purplePortalSpriteSheet;
@@ -110,15 +59,37 @@ namespace DamnedOfTheDeath
         List<Coin> _coinsLevel2;  // List to hold multiple coins
         int _score;
         const int MaxScore = 10;
-        SpriteFont _font;  // Font to display the score
+        #endregion
+
+        #region FireTrapVariables
+        List<FireTrap> _fireTrapsLevel1;
+        List<FireTrap> _fireTrapsLevel2;
+        #endregion
+
+        #region AlienVariables
+        Texture2D alienSpritesheet;
+        Alien alienLevel1;
+        Alien alienLevel2;
+        #endregion
+
+        #region DemonVariables
+        Texture2D demonSpritesheet;
+        Demon demonLevel1;
+        Demon demonLevel2;
         #endregion
 
         #region UI
         ScoreOverlay _scoreOverlay;
         WinScreen _winScreen;
-        private StartScreen _startScreen;
+        StartScreen _startScreen;
+        HealthOverlay _healthOverlay;
+        GameOverScreen _gameOverScreen;
 
         bool _gameWon;
+        bool _gameLost;
+        private bool _gameStarted = false;
+
+        private Texture2D _background;
         #endregion
 
         #region PlayerVariables
@@ -139,6 +110,18 @@ namespace DamnedOfTheDeath
         private int _frameWidth;
         private int _frameHeight;
         private Vector2 _velocity;
+        private int _playerHealth = 3;
+        private int _minPlayerHealth = 0;
+        private bool _isInvulnerable = false;
+        private double _invulnerabilityTime;
+        private double _flickerInterval = 0.1; // Interval between visibility toggles
+        private double _flickerTime = 0;
+        private bool _isVisible = true;
+        bool canJump = true; // To allow the player to jump only when grounded
+        // Level 1
+        List<Rectangle> groundCollisionsLevel1; // List to store multiple ground rectangles
+        // Level 2
+        List<Rectangle> groundCollisionsLevel2; // List to store multiple ground rectangles
         #endregion
 
         #region TilesetVariables
@@ -150,149 +133,7 @@ namespace DamnedOfTheDeath
         private int _tileHeight = 32;
         private bool isLevel2Active = false;
         private int _currentLevel;
-        #endregion
-
-        #region DictionaryCollisionMasks
-        private Dictionary<CollisionType, List<Rectangle>> _collisionMasks = new Dictionary<CollisionType, List<Rectangle>>();
-        #endregion
-
-        #region DictionaryTileCollisions
-        // Initialize tile collision properties
-        private Dictionary<TileType, CollisionType> _tileCollisions = new Dictionary<TileType, CollisionType>()
-            {
-                { TileType.Empty, CollisionType.Empty },
-                { TileType.StoneTopFloor_TopLeft, CollisionType.HalfFilledBottom },
-                { TileType.StoneTopFloor_TopMid, CollisionType.HalfFilledBottom },
-                { TileType.StoneTopFloor_TopRight, CollisionType.HalfFilledBottom },
-                { TileType.GrassFloor_TopLeft, CollisionType.HalfFilledBottom },
-                { TileType.GrassFloor_TopMid, CollisionType.HalfFilledBottom },
-                { TileType.GrassFloor_TopRight, CollisionType.HalfFilledBottom },
-                { TileType.Empty1, CollisionType.Empty },
-                { TileType.Empty2, CollisionType.Empty },
-                { TileType.Empty3, CollisionType.Empty },
-                { TileType.Empty4, CollisionType.Empty },
-                { TileType.Empty5, CollisionType.Empty },
-                { TileType.StoneTopFloor_BottomLeft, CollisionType.Full },
-                { TileType.StoneTopFloor_BottomMid, CollisionType.Full },
-                { TileType.StoneTopFloor_Bottomright, CollisionType.Full },
-                { TileType.GrassFloor_BottomLeft, CollisionType.Full },
-                { TileType.GrassFloor_BottomMid, CollisionType.Full },
-                { TileType.GrassFloor_BottomRight, CollisionType.Full },
-                { TileType.GrassFloorPillar_Tree_Top, CollisionType.HalfFilledBottom },
-                { TileType.GrassFLoorPillar_Pillar_Top, CollisionType.Full },
-                { TileType.Empty6, CollisionType.Empty },
-                { TileType.Empty7, CollisionType.Empty },
-                { TileType.StoneLeftBottomFloor_TopLeft, CollisionType.HalfFilledBottom },
-                { TileType.StoneLeftBottomFloor_TopRight, CollisionType.Full },
-                { TileType.StoneTopFloor_Wall1, CollisionType.Full },
-                { TileType.StoneRightBottomFloor_TopLeft, CollisionType.Full },
-                { TileType.StoneRightBottomFloor_TopRight, CollisionType.HalfFilledBottom },
-                { TileType.GrassFloorPillar_StoneRoad_TopLeft, CollisionType.HalfFilledBottom },
-                { TileType.GrassFloorPillar_StoneRoad_TopRight, CollisionType.HalfFilledBottom },
-                { TileType.GrassFloorPillar_Tree_Mid, CollisionType.Full },
-                { TileType.GrassFloorPillar_Pillar_Mid, CollisionType.Full },
-                { TileType.GrassFloorPillar_GrassRoad_Top, CollisionType.HalfFilledBottom },
-                { TileType.Empty8, CollisionType.Empty },
-                { TileType.StoneLeftBottomFloor_BottomLeft, CollisionType.Full },
-                { TileType.StoneLeftBottomFloor_BottomRight, CollisionType.Full },
-                { TileType.StoneTopFloor_Wall2, CollisionType.Full },
-                { TileType.StoneRightBottomFloor_BottomLeft, CollisionType.Full },
-                { TileType.StoneRightBottomFloor_BottomRight, CollisionType.Full },
-                { TileType.GrassFloorPillar_StoneRoad_BottomLeft, CollisionType.Full },
-                { TileType.GrassFloorPillar_StoneRoad_BottomRight, CollisionType.Full },
-                { TileType.GrassFloorPillar_Tree_Bottom, CollisionType.Full },
-                { TileType.GrassFloorPillar_Pillar_Bottom, CollisionType.Full },
-                { TileType.GrassFloorPillar_GrassRoad_Bottom, CollisionType.Full },
-                { TileType.Empty9, CollisionType.Empty },
-                { TileType.StoneLeftTopCeiling_TopLeft, CollisionType.Full },
-                { TileType.StoneLeftTopCeiling_TopRight, CollisionType.Full },
-                { TileType.StoneWall_BetweenTopCeiling, CollisionType.Full },
-                { TileType.StoneRightTopCeiling_TopLeft, CollisionType.Full },
-                { TileType.StoneRightTopCeiling_TopRight, CollisionType.Full },
-                { TileType.Empty10, CollisionType.Empty },
-                { TileType.GrassRamp_LeftMid_Top, CollisionType.DiagonalRightBottom },
-                { TileType.GrassRamp_Mid_Top, CollisionType.HalfFilledBottom },
-                { TileType.GrassRamp_RightMid_Top, CollisionType.DiagonalLeftBottom },
-                { TileType.Empty11, CollisionType.Empty },
-                { TileType.Empty12, CollisionType.Empty },
-                { TileType.StoneLeftTopCeiling_BottomLeft, CollisionType.Full },
-                { TileType.StoneLeftTopCeiling_BottomRight, CollisionType.Full },
-                { TileType.StoneBottomCeiling_TopMid, CollisionType.Full },
-                { TileType.StoneRightTopCeiling_BottomLeft, CollisionType.Full },
-                { TileType.StoneRightTopCeiling_BottomRight, CollisionType.Full },
-                { TileType.GrassRamp_TopLeft, CollisionType.DiagonalRightBottom },
-                { TileType.GrassRamp_LeftMid_Mid, CollisionType.Full },
-                { TileType.GrassRamp_Mid_Mid, CollisionType.Full },
-                { TileType.GrassRamp_RightMid_Mid, CollisionType.Full },
-                { TileType.GrassRamp_TopRight, CollisionType.DiagonalLeftBottom },
-                { TileType.Empty13, CollisionType.Empty },
-                { TileType.Empty14, CollisionType.Empty },
-                { TileType.StoneBottomCeiling_BottomLeft, CollisionType.Full },
-                { TileType.StoneBottomCeiling_BottomMid, CollisionType.Full },
-                { TileType.StoneBottomCeiling_BottomRight, CollisionType.Full },
-                { TileType.Empty15, CollisionType.Empty },
-                { TileType.GrassRamp_BottomLeft, CollisionType.Full },
-                { TileType.GrassRamp_LeftMid_Bottom, CollisionType.Full },
-                { TileType.GrassRamp_Mid_Bottom, CollisionType.Full },
-                { TileType.GrassRamp_RightMid_Bottom, CollisionType.Full },
-                { TileType.GrassRamp_BottomRight, CollisionType.Full },
-                { TileType.Empty16, CollisionType.Empty },
-                { TileType.Fence_TopLeft, CollisionType.Empty },
-                { TileType.Fence_TopRight, CollisionType.Empty },
-                { TileType.StoneBridge_TopLeft, CollisionType.HalfFilledBottom },
-                { TileType.StoneBridge_MidTopLeft, CollisionType.HalfFilledBottom },
-                { TileType.StoneBridge_MidTopRight, CollisionType.HalfFilledBottom },
-                { TileType.StoneBridge_TopRight, CollisionType.HalfFilledBottom },
-                { TileType.Empty17, CollisionType.Empty },
-                { TileType.Bush_TopLeft, CollisionType.Empty },
-                { TileType.Bush_TopMid, CollisionType.Empty },
-                { TileType.Bush_TopRight, CollisionType.Empty },
-                { TileType.Empty18, CollisionType.Empty },
-                { TileType.Fence_MidLeft, CollisionType.Empty },
-                { TileType.Fence_MidRight, CollisionType.Empty },
-                { TileType.StoneBridge_BottomLeft, CollisionType.HalfFilledTop },
-                { TileType.StoneBridge_MidBottomLeft, CollisionType.HalfFilledTop },
-                { TileType.StoneBridge_MidBottomRight, CollisionType.Full },
-                { TileType.StoneBridge_BottomRight, CollisionType.HalfFilledTop },
-                { TileType.Bush_Left_Top, CollisionType.Empty },
-                { TileType.Bush_TopLeftCorner, CollisionType.Empty },
-                { TileType.Bush_Black_Top, CollisionType.Empty },
-                { TileType.Bush_TopRightCorner, CollisionType.Empty },
-                { TileType.Bush_Right_Top, CollisionType.Empty },
-                { TileType.Fence_BottomLeft, CollisionType.Empty },
-                { TileType.Fence_BottomRight, CollisionType.Empty },
-                { TileType.StoneRamp_TopLeft, CollisionType.Empty }, // Nearly invisible
-                { TileType.StoneRamp_TopMid, CollisionType.HalfFilledBottom },
-                { TileType.StoneRamp_TopRight, CollisionType.Empty }, // Nearly invisible
-                { TileType.BrokenPillar_Top, CollisionType.HalfFilledBottom },
-                { TileType.Bush_Left_Mid, CollisionType.Empty },
-                { TileType.Bush_Black_Left, CollisionType.Empty },
-                { TileType.Bush_Black_Mid, CollisionType.Empty },
-                { TileType.Bush_Black_Right, CollisionType.Empty },
-                { TileType.Bush_Right_Mid, CollisionType.Empty },
-                { TileType.BlackPillar_TopLeft, CollisionType.Full },
-                { TileType.BlackPillar_TopRight, CollisionType.Full },
-                { TileType.StoneRamp_MidLeft, CollisionType.DiagonalRightBottom },
-                { TileType.StoneRamp_MidMid, CollisionType.Full },
-                { TileType.StoneRamp_MidRight, CollisionType.DiagonalLeftBottom },
-                { TileType.BrokenPillar_Bottom, CollisionType.Full },
-                { TileType.Bush_Left_Bottom, CollisionType.Empty },
-                { TileType.Bush_BottomLeftCorner, CollisionType.Empty },
-                { TileType.Bush_Black_Bottom, CollisionType.Empty },
-                { TileType.Bush_BottomRightCorner, CollisionType.Empty },
-                { TileType.Bush_Right_Bottom, CollisionType.Empty },
-                { TileType.BlackPillar_BottomLeft, CollisionType.Full },
-                { TileType.BlackPillar_BottomRight, CollisionType.Full },
-                { TileType.StoneRamp_BottomLeft, CollisionType.Empty }, // Nearly invisible
-                { TileType.Empty19, CollisionType.Empty },
-                { TileType.StoneRamp_BottomRight, CollisionType.Empty }, // Nearly invisible
-                { TileType.Empty20, CollisionType.Empty },
-                { TileType.Empty21, CollisionType.Empty },
-                { TileType.Bush_BottomLeft, CollisionType.Empty },
-                { TileType.Bush_BottomMid, CollisionType.Empty },
-                { TileType.Bush_BottomRight, CollisionType.Empty },
-                { TileType.Empty22, CollisionType.Empty }
-            };
+        private Texture2D _levelsBackground;
         #endregion
 
         #region enumTileType
@@ -433,18 +274,6 @@ namespace DamnedOfTheDeath
         }
         #endregion
 
-        #region CollisionType
-        public enum CollisionType
-        {
-            Empty,
-            Full,
-            HalfFilledTop,
-            HalfFilledBottom,
-            DiagonalLeftBottom,
-            DiagonalRightBottom
-        }
-        #endregion
-
         #endregion
 
         public Game1()
@@ -463,19 +292,14 @@ namespace DamnedOfTheDeath
         {
             _tileWidth = 32;
             _tileHeight = 32;
-
             _currentLevel = 1;
-
             _score = 0;  // Initialize score to 0
-
+            _playerHealth = 3;
             _gameWon = false;
-
+            _gameLost = false;
             // Set the initial position of the sprite
             _position = new Vector2(-40,350);
-
             _velocity = Vector2.Zero;
-
-            InitializeCollisionMasks();
 
             base.Initialize();
         }
@@ -483,6 +307,9 @@ namespace DamnedOfTheDeath
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
+
+            // Load the start screen background
+            _background = Content.Load<Texture2D>("DawnBackground");
 
             #region WhiteTexture
             // Create a 1x1 white texture to use for drawing rectangles
@@ -496,6 +323,29 @@ namespace DamnedOfTheDeath
             #region Player
             // Load the player's sprite sheet
             _spriteSheet = Content.Load<Texture2D>("GoblinMechRiderSpriteSheet");
+            #endregion
+
+            #region groundCollisionsLevel1
+            // Level 1
+            // Initialize the list of ground collisions
+            groundCollisionsLevel1 = new List<Rectangle>
+            {
+                new Rectangle(320, 310, 65, 20),
+                new Rectangle(550, 340, 25, 100),
+                new Rectangle(750, 340, 20, 100),
+                new Rectangle(930, 240, 320, 20),
+            };
+            #endregion
+
+            #region groundCollisionsLevel2
+            // Level 2
+            // Initialize the list of ground collisions
+            groundCollisionsLevel2 = new List<Rectangle>
+            {
+                new Rectangle(720, 330, 10, 100),
+                new Rectangle(800, 210, 120, 20),
+                new Rectangle(1060, 300, 190, 20),
+            };
             #endregion
 
             #region PurplePortal
@@ -531,6 +381,69 @@ namespace DamnedOfTheDeath
             }
             #endregion
 
+            #region FireTrap
+            // Load the fire trap texture
+            Texture2D _fireTrapTexture = Content.Load<Texture2D>("FireTrap");
+
+            // Initialize the list of fire traps for level 1
+            _fireTrapsLevel1 = new List<FireTrap>()
+            {
+                // Add multiple fire traps with different positions
+                new FireTrap(_fireTrapTexture, 32, 41, 14, 0.07f) { _fireTrapPosition = new Vector2(540, 350) },
+            };
+
+            // Initialize the list of fire traps for level 2
+            _fireTrapsLevel2 = new List<FireTrap>()
+            {
+                // Add multiple fire traps with different positions
+            new FireTrap(_fireTrapTexture, 32, 41, 14, 0.07f) { _fireTrapPosition = new Vector2(1035, 320) },
+        };
+            #endregion
+
+            #region Alien
+            alienSpritesheet = Content.Load<Texture2D>("AlienSpritesheet");
+
+            // Define the path for each level
+            Vector2[] alienPathLevel1 = new Vector2[]
+            {
+            new Vector2(950f, 250f),
+            new Vector2(1150f, 250f)
+            };
+
+            Vector2[] alienPathLevel2 = new Vector2[]
+            {
+            new Vector2(1200f, 390f),
+            new Vector2(1400f, 390f)
+            };
+
+            // Initialize the alien animation for each level with paths and speed
+            alienLevel1 = new Alien(alienSpritesheet, alienPathLevel1, 100f);
+            alienLevel2 = new Alien(alienSpritesheet, alienPathLevel2, 100f);
+            #endregion
+
+            #region Demon
+            demonSpritesheet = Content.Load<Texture2D>("DemonSpritesheet");
+
+            // Define the path for each level
+            Vector2[] pathLevel1 = new Vector2[]
+            {
+            new Vector2(10f, 200f),
+            new Vector2(100, 270f),
+            new Vector2(150, 200f)
+            };
+
+            Vector2[] pathLevel2 = new Vector2[]
+            {
+            new Vector2(250f, 200f),
+            new Vector2(400f, 270),
+            new Vector2(500f, 200)
+            };
+
+            // Initialize the demon animation for each level with paths and speed
+            demonLevel1 = new Demon(demonSpritesheet, pathLevel1[0], pathLevel1, 100f);
+            demonLevel2 = new Demon(demonSpritesheet, pathLevel2[0], pathLevel2, 100f);
+            #endregion
+
             #region Coin
             // Load the coin spritesheet (Make sure the file is in your Content folder)
             Texture2D coinTexture = Content.Load<Texture2D>("coin2_20x20");
@@ -558,29 +471,46 @@ namespace DamnedOfTheDeath
         };
             #endregion
 
+            // Load the font and button texture
+            Texture2D buttonTexture = Content.Load<Texture2D>("Hover@3x");
+
+            SpriteFont titleFont = Content.Load<SpriteFont>("TitleFont");
+
             #region ScoreOverlay
             SpriteFont scoreFont = Content.Load<SpriteFont>("ScoreFont");
 
             _scoreOverlay = new ScoreOverlay(scoreFont, new Vector2(10, 10));  // Initialize UI screen with font and position
             #endregion
 
+            #region HealthOverlay
+            _healthOverlay = new HealthOverlay(scoreFont, new Vector2(1500, 10));  // Initialize UI screen with font and position
+            #endregion
+
             #region WinScreen
             SpriteFont font = Content.Load<SpriteFont>("Font");
 
-            _winScreen = new WinScreen(font, GraphicsDevice);     // Initialize the win screen
+            _winScreen = new WinScreen(font, titleFont, buttonTexture, GraphicsDevice, _background);     // Initialize the win screen
+            #endregion
+
+            #region GameOverScreen
+            _gameOverScreen = new GameOverScreen(font, titleFont, buttonTexture, GraphicsDevice, _background);     // Initialize the game over screen
             #endregion
 
             #region StartScreen
-            // Load the font and button texture
-            Texture2D buttonTexture = Content.Load<Texture2D>("Hover@3x");
-
             // Initialize the start screen
-            _startScreen = new StartScreen(font, buttonTexture);
+            _startScreen = new StartScreen(font, titleFont, buttonTexture, _background);
+
+            buttonTexture = CreateButtonTexture(120, 50, Color.Gray);
             #endregion
 
             #region Tileset
             // Load the tileset texture
             _tileset = Content.Load<Texture2D>("Tiles");
+            #endregion
+
+            #region Background
+            // Load the background texture for both levels
+            _levelsBackground = Content.Load<Texture2D>("DawnBackground");
             #endregion
 
             #region Level1
@@ -599,9 +529,9 @@ namespace DamnedOfTheDeath
                 { TileType.Empty,                           TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.Empty,                         TileType.Empty,                             TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.Empty,                                 TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.Empty,                         TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.Empty,                         TileType.Empty,                             TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.StoneRamp_MidLeft,                     TileType.StoneRamp_MidMid,                      TileType.StoneRamp_MidRight,                    TileType.StoneRamp_MidLeft,                     TileType.StoneRamp_MidMid,                      TileType.StoneRamp_MidRight,                        TileType.StoneRamp_MidLeft,                              TileType.StoneRamp_MidMid,                          TileType.StoneBridge_BottomLeft,                        TileType.StoneBridge_MidBottomLeft,     TileType.StoneBridge_MidBottomRight,        TileType.StoneRamp_MidRight,                TileType.Empty,                            TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty },
                 { TileType.Empty,                           TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.Empty,                         TileType.Empty,                             TileType.Empty,                                 TileType.StoneBridge_TopLeft,                   TileType.StoneBridge_MidTopLeft,        TileType.StoneBridge_MidTopRight,       TileType.StoneBridge_TopRight,              TileType.Empty,                                 TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.Empty,                         TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.Empty,                         TileType.Empty,                             TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.StoneRamp_BottomLeft,                  TileType.Empty,                                 TileType.StoneRamp_BottomRight,                 TileType.StoneRamp_BottomLeft,                  TileType.Empty,                                 TileType.StoneRamp_BottomRight,                     TileType.StoneRamp_BottomLeft,                           TileType.Empty,                                     TileType.Empty,                                         TileType.Empty,                         TileType.GrassFLoorPillar_Pillar_Top,       TileType.StoneRamp_BottomRight,             TileType.Empty,                            TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty },
                 { TileType.Empty,                           TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.Empty,                         TileType.Empty,                             TileType.Empty,                                 TileType.StoneBridge_BottomLeft,                TileType.StoneBridge_MidBottomLeft,     TileType.StoneBridge_MidBottomRight,    TileType.StoneBridge_BottomRight,           TileType.Empty,                                 TileType.Empty,                         TileType.Empty,                         TileType.StoneTopFloor_TopLeft,             TileType.StoneTopFloor_TopMid,          TileType.StoneTopFloor_TopRight,            TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.StoneTopFloor_TopLeft,             TileType.StoneTopFloor_TopMid,          TileType.StoneTopFloor_TopRight,            TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                          TileType.Empty,                                     TileType.Empty,                                         TileType.Empty,                         TileType.GrassFLoorPillar_Pillar_Top,       TileType.Empty,                             TileType.Empty,                            TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty },
-                { TileType.Empty,                           TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.GrassRamp_LeftMid_Top,         TileType.GrassRamp_Mid_Top,                 TileType.GrassRamp_RightMid_Top,        TileType.Empty,                             TileType.Empty,                                 TileType.Empty,                                 TileType.GrassFloorPillar_Tree_Top,     TileType.GrassFLoorPillar_Pillar_Top,   TileType.Empty,                             TileType.Empty,                                 TileType.Empty,                         TileType.Empty,                         TileType.StoneTopFloor_BottomLeft,          TileType.StoneTopFloor_BottomMid,       TileType.StoneTopFloor_Bottomright,         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.StoneTopFloor_BottomLeft,          TileType.StoneTopFloor_BottomMid,       TileType.StoneTopFloor_Bottomright,         TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                          TileType.Empty,                                     TileType.Empty,                                         TileType.GrassFloorPillar_Tree_Top,     TileType.BrokenPillar_Bottom,               TileType.Empty,                             TileType.Empty,                            TileType.Empty,                         TileType.Empty,                         TileType.GrassRamp_LeftMid_Top,         TileType.GrassRamp_Mid_Top,             TileType.GrassRamp_RightMid_Top,        TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty },
-                { TileType.GrassFloor_TopLeft,              TileType.GrassFloor_TopMid,                 TileType.GrassFloor_TopRight,           TileType.GrassRamp_TopLeft,             TileType.GrassRamp_LeftMid_Mid,         TileType.GrassRamp_Mid_Mid,                 TileType.GrassRamp_RightMid_Mid,        TileType.GrassRamp_TopRight,                TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,   TileType.GrassFloorPillar_Tree_Mid,     TileType.GrassFloorPillar_Pillar_Mid,   TileType.GrassFloorPillar_GrassRoad_Top,    TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.StoneTopFloor_TopMid,          TileType.StoneTopFloor_TopMid,          TileType.StoneLeftBottomFloor_TopRight,     TileType.StoneTopFloor_Wall1,           TileType.StoneRightBottomFloor_TopLeft,     TileType.StoneTopFloor_TopMid,          TileType.StoneTopFloor_TopMid,          TileType.StoneTopFloor_TopMid,          TileType.StoneLeftBottomFloor_TopRight,     TileType.StoneTopFloor_Wall1,           TileType.StoneRightBottomFloor_TopLeft,     TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,   TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,   TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,   TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,   TileType.GrassFloorPillar_StoneRoad_TopLeft,        TileType.GrassFloorPillar_StoneRoad_TopRight,            TileType.GrassFloorPillar_StoneRoad_TopLeft,        TileType.GrassFloorPillar_StoneRoad_TopRight,           TileType.GrassFloorPillar_Tree_Mid,     TileType.GrassFloorPillar_Pillar_Mid,       TileType.GrassFloorPillar_GrassRoad_Top,    TileType.GrassFloor_TopMid,                TileType.GrassFloor_TopRight,           TileType.GrassRamp_TopLeft,             TileType.GrassRamp_LeftMid_Mid,         TileType.GrassRamp_Mid_Mid,             TileType.GrassRamp_RightMid_Mid,        TileType.GrassRamp_TopRight,            TileType.GrassFloor_TopLeft,            TileType.GrassFloor_TopMid,             TileType.GrassFloor_TopRight },
-                { TileType.GrassFloor_BottomLeft,           TileType.GrassFloor_BottomMid,              TileType.GrassFloor_BottomRight,        TileType.GrassRamp_BottomLeft,          TileType.GrassRamp_LeftMid_Bottom,      TileType.GrassRamp_Mid_Bottom,              TileType.GrassRamp_RightMid_Bottom,     TileType.GrassRamp_BottomRight,             TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,TileType.GrassFloorPillar_Tree_Bottom,  TileType.GrassFloorPillar_Pillar_Bottom,TileType.GrassFloorPillar_GrassRoad_Bottom, TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.StoneTopFloor_BottomMid,       TileType.StoneTopFloor_BottomMid,       TileType.StoneLeftBottomFloor_BottomRight,  TileType.StoneTopFloor_Wall2,           TileType.StoneRightBottomFloor_BottomLeft,  TileType.StoneTopFloor_BottomMid,       TileType.StoneTopFloor_BottomMid,       TileType.StoneTopFloor_BottomMid,       TileType.StoneLeftBottomFloor_BottomRight,  TileType.StoneTopFloor_Wall2,           TileType.StoneRightBottomFloor_BottomLeft,  TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,TileType.GrassFloorPillar_StoneRoad_BottomRight,TileType.GrassFloorPillar_StoneRoad_BottomRight,TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,TileType.GrassFloorPillar_StoneRoad_BottomLeft,     TileType.GrassFloorPillar_StoneRoad_BottomRight,         TileType.GrassFloorPillar_StoneRoad_BottomLeft,     TileType.GrassFloorPillar_StoneRoad_BottomRight,        TileType.GrassFloorPillar_Tree_Bottom,  TileType.GrassFloorPillar_Pillar_Bottom,    TileType.GrassFloorPillar_GrassRoad_Bottom, TileType.GrassFloor_BottomMid,             TileType.GrassFloor_BottomRight,        TileType.GrassRamp_BottomLeft,          TileType.GrassRamp_LeftMid_Bottom,      TileType.GrassRamp_Mid_Bottom,          TileType.GrassRamp_RightMid_Bottom,     TileType.GrassRamp_BottomRight,         TileType.GrassFloor_BottomLeft,         TileType.GrassFloor_BottomMid,          TileType.GrassFloor_BottomRight },
+                { TileType.Empty,                           TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.Empty,                         TileType.Empty,                             TileType.Empty,                                 TileType.Empty,                                 TileType.GrassFloorPillar_Tree_Top,     TileType.GrassFLoorPillar_Pillar_Top,   TileType.Empty,                             TileType.Empty,                                 TileType.Empty,                         TileType.Empty,                         TileType.StoneTopFloor_BottomLeft,          TileType.StoneTopFloor_BottomMid,       TileType.StoneTopFloor_Bottomright,         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.StoneTopFloor_BottomLeft,          TileType.StoneTopFloor_BottomMid,       TileType.StoneTopFloor_Bottomright,         TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                          TileType.Empty,                                     TileType.Empty,                                         TileType.GrassFloorPillar_Tree_Top,     TileType.BrokenPillar_Bottom,               TileType.Empty,                             TileType.Empty,                            TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty },
+                { TileType.GrassFloor_TopLeft,              TileType.GrassFloor_TopMid,                 TileType.GrassFloor_TopRight,           TileType.GrassFloor_TopLeft,            TileType.GrassFloor_TopMid,             TileType.GrassFloor_TopRight,               TileType.GrassFloor_TopLeft,            TileType.GrassFloor_TopMid,                 TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,   TileType.GrassFloorPillar_Tree_Mid,     TileType.GrassFloorPillar_Pillar_Mid,   TileType.GrassFloorPillar_GrassRoad_Top,    TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.StoneTopFloor_TopMid,          TileType.StoneTopFloor_TopMid,          TileType.StoneLeftBottomFloor_TopRight,     TileType.StoneTopFloor_Wall1,           TileType.StoneRightBottomFloor_TopLeft,     TileType.StoneTopFloor_TopMid,          TileType.StoneTopFloor_TopMid,          TileType.StoneTopFloor_TopMid,          TileType.StoneLeftBottomFloor_TopRight,     TileType.StoneTopFloor_Wall1,           TileType.StoneRightBottomFloor_TopLeft,     TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,   TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,   TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,   TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,   TileType.GrassFloorPillar_StoneRoad_TopLeft,        TileType.GrassFloorPillar_StoneRoad_TopRight,            TileType.GrassFloorPillar_StoneRoad_TopLeft,        TileType.GrassFloorPillar_StoneRoad_TopRight,           TileType.GrassFloorPillar_Tree_Mid,     TileType.GrassFloorPillar_Pillar_Mid,       TileType.GrassFloorPillar_GrassRoad_Top,    TileType.GrassFloor_TopMid,                TileType.GrassFloor_TopRight,           TileType.GrassFloor_TopLeft,            TileType.GrassFloor_TopMid,             TileType.GrassFloor_TopRight,           TileType.GrassFloor_TopLeft,            TileType.GrassFloor_TopMid,             TileType.GrassFloor_TopRight,           TileType.GrassFloor_TopRight,           TileType.GrassFloor_TopLeft },
+                { TileType.GrassFloor_BottomLeft,           TileType.GrassFloor_BottomMid,              TileType.GrassFloor_BottomRight,        TileType.GrassFloor_BottomLeft,         TileType.GrassFloor_BottomMid,          TileType.GrassFloor_BottomRight,            TileType.GrassFloor_BottomLeft,         TileType.GrassFloor_BottomMid,              TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,TileType.GrassFloorPillar_Tree_Bottom,  TileType.GrassFloorPillar_Pillar_Bottom,TileType.GrassFloorPillar_GrassRoad_Bottom, TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.StoneTopFloor_BottomMid,       TileType.StoneTopFloor_BottomMid,       TileType.StoneLeftBottomFloor_BottomRight,  TileType.StoneTopFloor_Wall2,           TileType.StoneRightBottomFloor_BottomLeft,  TileType.StoneTopFloor_BottomMid,       TileType.StoneTopFloor_BottomMid,       TileType.StoneTopFloor_BottomMid,       TileType.StoneLeftBottomFloor_BottomRight,  TileType.StoneTopFloor_Wall2,           TileType.StoneRightBottomFloor_BottomLeft,  TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,TileType.GrassFloorPillar_StoneRoad_BottomRight,TileType.GrassFloorPillar_StoneRoad_BottomRight,TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,TileType.GrassFloorPillar_StoneRoad_BottomLeft,     TileType.GrassFloorPillar_StoneRoad_BottomRight,         TileType.GrassFloorPillar_StoneRoad_BottomLeft,     TileType.GrassFloorPillar_StoneRoad_BottomRight,        TileType.GrassFloorPillar_Tree_Bottom,  TileType.GrassFloorPillar_Pillar_Bottom,    TileType.GrassFloorPillar_GrassRoad_Bottom, TileType.GrassFloor_BottomMid,             TileType.GrassFloor_BottomRight,        TileType.GrassFloor_BottomLeft,         TileType.GrassFloor_BottomMid,          TileType.GrassFloor_BottomRight,        TileType.GrassFloor_BottomLeft,         TileType.GrassFloor_BottomMid,          TileType.GrassFloor_BottomRight,        TileType.GrassFloor_BottomRight,        TileType.GrassFloor_BottomLeft },
                 };
             #endregion
 
@@ -620,10 +550,10 @@ namespace DamnedOfTheDeath
                 { TileType.Empty,                                   TileType.Empty,                                     TileType.Empty,                         TileType.Fence_MidRight,                    TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.Empty,                         TileType.Empty,                             TileType.Empty,                             TileType.StoneBridge_BottomLeft,        TileType.StoneBridge_MidBottomLeft,     TileType.StoneBridge_MidBottomRight,        TileType.StoneBridge_MidBottomLeft,             TileType.StoneBridge_MidBottomLeft,                 TileType.StoneBridge_BottomRight,       TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                         TileType.Empty,                             TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty },
                 { TileType.Empty,                                   TileType.Empty,                                     TileType.Empty,                         TileType.Fence_MidRight,                    TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.Empty,                         TileType.Empty,                             TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.GrassFLoorPillar_Pillar_Top,       TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                         TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                         TileType.Empty,                             TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty },
                 { TileType.Empty,                                   TileType.Empty,                                     TileType.Empty,                         TileType.Fence_MidRight,                    TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.Empty,                         TileType.Empty,                             TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.GrassFLoorPillar_Pillar_Top,       TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                         TileType.Empty,                                 TileType.Empty,                                     TileType.StoneBridge_TopLeft,           TileType.StoneBridge_MidTopRight,           TileType.StoneRamp_TopRight,                TileType.StoneRamp_TopLeft,             TileType.StoneRamp_TopRight,            TileType.StoneRamp_TopLeft,             TileType.StoneRamp_TopMid,                      TileType.StoneRamp_TopRight,                        TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty },
-                { TileType.Empty,                                   TileType.Empty,                                     TileType.Empty,                         TileType.Fence_BottomRight,                 TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.GrassRamp_LeftMid_Top,         TileType.GrassRamp_Mid_Top,             TileType.GrassRamp_RightMid_Top,            TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.StoneTopFloor_TopLeft,         TileType.StoneTopFloor_TopMid,              TileType.StoneTopFloor_TopRight,            TileType.Empty,                         TileType.Empty,                         TileType.GrassFLoorPillar_Pillar_Top,       TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                         TileType.Empty,                                 TileType.Empty,                                     TileType.StoneBridge_BottomLeft,        TileType.StoneBridge_MidBottomRight,        TileType.StoneRamp_MidRight,                TileType.StoneRamp_MidLeft,             TileType.StoneRamp_MidRight,            TileType.StoneRamp_MidLeft,             TileType.StoneRamp_MidMid,                      TileType.StoneRamp_MidRight,                        TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty },
-                { TileType.Empty,                                   TileType.Empty,                                     TileType.GrassFloorPillar_Tree_Top,     TileType.BrokenPillar_Bottom,               TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.GrassRamp_LeftMid_Top,         TileType.GrassRamp_TopLeft,             TileType.GrassRamp_LeftMid_Mid,         TileType.GrassRamp_Mid_Mid,             TileType.GrassRamp_RightMid_Mid,            TileType.GrassRamp_TopRight,            TileType.GrassRamp_RightMid_Top,        TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.StoneTopFloor_BottomLeft,      TileType.StoneTopFloor_BottomMid,           TileType.StoneTopFloor_Bottomright,         TileType.Empty,                         TileType.GrassFloorPillar_Tree_Top,     TileType.GrassFLoorPillar_Pillar_Top,       TileType.Empty,                                 TileType.Empty,                                     TileType.GrassFloorPillar_Tree_Top,     TileType.Empty,                                 TileType.Empty,                                     TileType.GrassFloorPillar_Tree_Top,     TileType.GrassFLoorPillar_Pillar_Top,       TileType.StoneRamp_BottomRight,             TileType.StoneRamp_BottomLeft,          TileType.StoneRamp_BottomRight,         TileType.StoneRamp_BottomLeft,          TileType.Empty,                                 TileType.StoneRamp_BottomRight,                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty },
-                { TileType.GrassFloorPillar_StoneRoad_TopLeft,      TileType.GrassFloorPillar_StoneRoad_TopRight,       TileType.GrassFloorPillar_Tree_Mid,     TileType.GrassFloorPillar_Pillar_Mid,       TileType.GrassFloorPillar_GrassRoad_Top,    TileType.GrassFloor_TopLeft,            TileType.GrassFloor_TopMid,             TileType.GrassFloor_TopRight,           TileType.GrassRamp_TopLeft,             TileType.GrassRamp_LeftMid_Mid,         TileType.GrassRamp_BottomLeft,          TileType.GrassRamp_Mid_Bottom,          TileType.GrassRamp_Mid_Bottom,          TileType.GrassRamp_RightMid_Bottom,         TileType.GrassRamp_BottomRight,         TileType.GrassRamp_RightMid_Mid,        TileType.GrassRamp_TopRight,            TileType.GrassRamp_RightMid_Top,        TileType.Empty,                         TileType.Empty,                         TileType.StoneLeftBottomFloor_TopLeft,      TileType.StoneLeftBottomFloor_TopRight, TileType.StoneTopFloor_Wall1,               TileType.StoneRightBottomFloor_TopLeft,     TileType.StoneTopFloor_TopMid,          TileType.GrassFloorPillar_Tree_Mid,     TileType.GrassFloorPillar_Pillar_Mid,       TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,       TileType.GrassFloorPillar_Tree_Mid,     TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,       TileType.GrassFloorPillar_Tree_Mid,     TileType.GrassFloorPillar_Pillar_Mid,       TileType.GrassFloorPillar_GrassRoad_Top,    TileType.GrassFloor_TopLeft,            TileType.GrassFloor_TopMid,             TileType.GrassFloor_TopRight,           TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,       TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,       TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,       TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,       TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,       TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight },
-                { TileType.GrassFloorPillar_StoneRoad_BottomLeft,   TileType.GrassFloorPillar_StoneRoad_BottomRight,    TileType.GrassFloorPillar_Tree_Bottom,  TileType.GrassFloorPillar_Pillar_Bottom,    TileType.GrassFloorPillar_GrassRoad_Bottom, TileType.GrassFloor_BottomLeft,         TileType.GrassFloor_BottomMid,          TileType.GrassFloor_BottomRight,        TileType.GrassRamp_BottomLeft,          TileType.GrassRamp_LeftMid_Bottom,      TileType.GrassRamp_Mid_Bottom,          TileType.GrassRamp_Mid_Bottom,          TileType.GrassRamp_Mid_Bottom,          TileType.GrassRamp_RightMid_Bottom,         TileType.GrassRamp_RightMid_Bottom,     TileType.GrassRamp_RightMid_Bottom,     TileType.GrassRamp_BottomRight,         TileType.GrassRamp_RightMid_Mid,        TileType.GrassRamp_TopRight,            TileType.GrassRamp_RightMid_Top,        TileType.StoneLeftBottomFloor_BottomLeft,   TileType.StoneTopFloor_BottomMid,       TileType.StoneTopFloor_Wall1,               TileType.StoneRightBottomFloor_BottomLeft,  TileType.StoneTopFloor_BottomMid,       TileType.GrassFloorPillar_Tree_Bottom,  TileType.GrassFloorPillar_Pillar_Bottom,    TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,    TileType.GrassFloorPillar_Tree_Bottom,  TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,    TileType.GrassFloorPillar_Tree_Bottom,  TileType.GrassFloorPillar_Pillar_Bottom,    TileType.GrassFloorPillar_GrassRoad_Bottom, TileType.GrassFloor_BottomLeft,         TileType.GrassFloor_BottomMid,          TileType.GrassFloor_BottomRight,        TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,    TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,    TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,    TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,    TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,    TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight },
+                { TileType.Empty,                                   TileType.Empty,                                     TileType.Empty,                         TileType.Fence_BottomRight,                 TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.StoneTopFloor_TopLeft,         TileType.StoneTopFloor_TopMid,              TileType.StoneTopFloor_TopRight,            TileType.Empty,                         TileType.Empty,                         TileType.GrassFLoorPillar_Pillar_Top,       TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                         TileType.Empty,                                 TileType.Empty,                                     TileType.StoneBridge_BottomLeft,        TileType.StoneBridge_MidBottomRight,        TileType.StoneRamp_MidRight,                TileType.StoneRamp_MidLeft,             TileType.StoneRamp_MidRight,            TileType.StoneRamp_MidLeft,             TileType.StoneRamp_MidMid,                      TileType.StoneRamp_MidRight,                        TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty },
+                { TileType.Empty,                                   TileType.Empty,                                     TileType.GrassFloorPillar_Tree_Top,     TileType.BrokenPillar_Bottom,               TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                         TileType.Empty,                             TileType.StoneTopFloor_BottomLeft,      TileType.StoneTopFloor_BottomMid,           TileType.StoneTopFloor_Bottomright,         TileType.Empty,                         TileType.GrassFloorPillar_Tree_Top,     TileType.GrassFLoorPillar_Pillar_Top,       TileType.Empty,                                 TileType.Empty,                                     TileType.GrassFloorPillar_Tree_Top,     TileType.Empty,                                 TileType.Empty,                                     TileType.GrassFloorPillar_Tree_Top,     TileType.GrassFLoorPillar_Pillar_Top,       TileType.StoneRamp_BottomRight,             TileType.StoneRamp_BottomLeft,          TileType.StoneRamp_BottomRight,         TileType.StoneRamp_BottomLeft,          TileType.Empty,                                 TileType.StoneRamp_BottomRight,                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty,                                     TileType.Empty,                                 TileType.Empty },
+                { TileType.GrassFloorPillar_StoneRoad_TopLeft,      TileType.GrassFloorPillar_StoneRoad_TopRight,       TileType.GrassFloorPillar_Tree_Mid,     TileType.GrassFloorPillar_Pillar_Mid,       TileType.GrassFloorPillar_GrassRoad_Top,    TileType.GrassFloor_TopLeft,            TileType.GrassFloor_TopMid,             TileType.GrassFloor_TopRight,           TileType.GrassFloor_TopLeft,            TileType.GrassFloor_TopMid,             TileType.GrassFloor_TopRight,           TileType.GrassFloor_TopLeft,            TileType.GrassFloor_TopMid,             TileType.GrassFloor_TopRight,               TileType.GrassFloor_TopLeft,            TileType.GrassFloor_TopMid,             TileType.GrassFloor_TopRight,           TileType.GrassFloor_TopLeft,            TileType.GrassFloor_TopMid,             TileType.GrassFloor_TopRight,           TileType.GrassFloor_TopMid,                 TileType.StoneLeftBottomFloor_TopRight, TileType.StoneTopFloor_Wall1,               TileType.StoneRightBottomFloor_TopLeft,     TileType.StoneTopFloor_TopMid,          TileType.GrassFloorPillar_Tree_Mid,     TileType.GrassFloorPillar_Pillar_Mid,       TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,       TileType.GrassFloorPillar_Tree_Mid,     TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,       TileType.GrassFloorPillar_Tree_Mid,     TileType.GrassFloorPillar_Pillar_Mid,       TileType.GrassFloorPillar_GrassRoad_Top,    TileType.GrassFloor_TopLeft,            TileType.GrassFloor_TopMid,             TileType.GrassFloor_TopRight,           TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,       TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,       TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,       TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,       TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight,       TileType.GrassFloorPillar_StoneRoad_TopLeft,    TileType.GrassFloorPillar_StoneRoad_TopRight },
+                { TileType.GrassFloorPillar_StoneRoad_BottomLeft,   TileType.GrassFloorPillar_StoneRoad_BottomRight,    TileType.GrassFloorPillar_Tree_Bottom,  TileType.GrassFloorPillar_Pillar_Bottom,    TileType.GrassFloorPillar_GrassRoad_Bottom, TileType.GrassFloor_BottomLeft,         TileType.GrassFloor_BottomMid,          TileType.GrassFloor_BottomRight,        TileType.GrassFloor_BottomLeft,         TileType.GrassFloor_BottomMid,          TileType.GrassFloor_BottomRight,        TileType.GrassFloor_BottomLeft,         TileType.GrassFloor_BottomMid,          TileType.GrassFloor_BottomRight,            TileType.GrassFloor_BottomLeft,         TileType.GrassFloor_BottomMid,          TileType.GrassFloor_BottomRight,        TileType.GrassFloor_BottomLeft,         TileType.GrassFloor_BottomMid,          TileType.GrassFloor_BottomRight,        TileType.GrassFloor_BottomMid,              TileType.StoneTopFloor_BottomMid,       TileType.StoneTopFloor_Wall1,               TileType.StoneRightBottomFloor_BottomLeft,  TileType.StoneTopFloor_BottomMid,       TileType.GrassFloorPillar_Tree_Bottom,  TileType.GrassFloorPillar_Pillar_Bottom,    TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,    TileType.GrassFloorPillar_Tree_Bottom,  TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,    TileType.GrassFloorPillar_Tree_Bottom,  TileType.GrassFloorPillar_Pillar_Bottom,    TileType.GrassFloorPillar_GrassRoad_Bottom, TileType.GrassFloor_BottomLeft,         TileType.GrassFloor_BottomMid,          TileType.GrassFloor_BottomRight,        TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,    TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,    TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,    TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,    TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight,    TileType.GrassFloorPillar_StoneRoad_BottomLeft, TileType.GrassFloorPillar_StoneRoad_BottomRight },
             };
             #endregion
 
@@ -636,315 +566,387 @@ namespace DamnedOfTheDeath
             _playerHitbox = new Rectangle((int)_position.X - (_frameWidth / 2), (int)_position.Y + _frameHeight / 2, _frameWidth / 2, _frameHeight / 2); // Adjust the width division based on the number of frames
             Console.WriteLine(_playerHitbox);
             #endregion
-
         }
 
         protected override void Update(GameTime gameTime)
         {
-            #region IsKeyDown
-            if (Keyboard.GetState().IsKeyDown(Keys.Escape))
-                Exit();
-            #endregion
-
-            if (!_gameWon)
+            if (!_gameStarted)
             {
+                int startScreenResult = _startScreen.Update(gameTime);
 
-                #region delta
-                // Get the elapsed time since the last update normally var now float
-                float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (startScreenResult == 1)
+                {
+                    _currentLevel = 1;
+                    isLevel2Active = false;
+                    UpdateCoins(_coinsLevel1, gameTime);
+                    UpdateFireTraps(_fireTrapsLevel1, gameTime);
+                    _gameStarted = true;
+
+                }
+                else if (startScreenResult == 2)
+                {
+                    _currentLevel = 1;
+                    isLevel2Active = false;
+                    UpdateCoins(_coinsLevel1, gameTime);
+                    UpdateFireTraps(_fireTrapsLevel1, gameTime);
+                    _gameStarted = true;
+                }
+                else if (startScreenResult == 3)
+                {
+                    _currentLevel = 2;
+                    isLevel2Active = true;
+                    UpdateCoins(_coinsLevel2, gameTime);
+                    UpdateFireTraps(_fireTrapsLevel2, gameTime);
+                    _gameStarted = true;
+                }
+            }
+            // Game Started
+            else
+            {
+                #region IsKeyDown
+                if (Keyboard.GetState().IsKeyDown(Keys.Escape))
+                    Exit();
                 #endregion
+                if (!_gameWon && !_gameLost)
+                {
+                    #region delta
+                    // Get the elapsed time since the last update normally var now float
+                    float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    #endregion
 
-                #region HandleInputMovement
-                // Handle input for movement
-                var direction = Vector2.Zero;
-                if (Keyboard.GetState().IsKeyDown(Keys.Left))
-                {
-                    direction.X = -1;
-                }
-                else if (Keyboard.GetState().IsKeyDown(Keys.Right))
-                {
-                    direction.X = 1;
-                }
-                #endregion
-
-                #region HandleAttacking
-                // Handle attacking
-                if (Keyboard.GetState().IsKeyDown(Keys.Space) && !_isAttacking)
-                {
-                    _isAttacking = true;
-                    _frame = 0; // Start from the first frame of the attack animation
-                }
-                #endregion
-
-                #region HandleJumping
-                // Handle jumping
-                if (Keyboard.GetState().IsKeyDown(Keys.Up) && _isGrounded && !_isJumping)
-                {
-                    _velocity.Y = _jumpSpeed;
-                    _isJumping = true;
-                    _isGrounded = false;
-                }
-                #endregion
-
-                #region isAttacking
-                if (_isAttacking)
-                {
-                    AnimateAttack(gameTime);
-                }
-                else
-                {
-                    // Update horizontal velocity and animation
-                    if (direction.X != 0)
+                    #region HandleInputMovement
+                    // Handle input for movement
+                    var direction = Vector2.Zero;
+                    if (Keyboard.GetState().IsKeyDown(Keys.Left))
                     {
-                        _velocity.X += direction.X * _acceleration * delta;
-                        _velocity.X = MathHelper.Clamp(_velocity.X, -_maxSpeed, _maxSpeed);
-                        AnimateMovement(gameTime);
+                        direction.X = -1;
+                    }
+                    else if (Keyboard.GetState().IsKeyDown(Keys.Right))
+                    {
+                        direction.X = 1;
+                    }
+                    #endregion
+
+                    #region HandleAttacking
+                    // Handle attacking
+                    if (Keyboard.GetState().IsKeyDown(Keys.Space) && !_isAttacking)
+                    {
+                        _isAttacking = true;
+                        _frame = 0; // Start from the first frame of the attack animation
+                    }
+                    #endregion
+
+                    #region HandleJumping
+                    // Handle jumping
+                    if (Keyboard.GetState().IsKeyDown(Keys.Up) && _isGrounded && !_isJumping)
+                    {
+                        _velocity.Y = _jumpSpeed;
+                        _isJumping = true;
+                        _isGrounded = false;
+                    }
+                    #endregion
+
+                    #region isAttacking
+                    if (_isAttacking)
+                    {
+                        AnimateAttack(gameTime);
                     }
                     else
                     {
-                        if (_velocity.X > 0)
+                        // Update horizontal velocity and animation
+                        if (direction.X != 0)
                         {
-                            _velocity.X -= _deceleration * delta;
-                            if (_velocity.X < 0) _velocity.X = 0;
+                            _velocity.X += direction.X * _acceleration * delta;
+                            _velocity.X = MathHelper.Clamp(_velocity.X, -_maxSpeed, _maxSpeed);
+                            AnimateMovement(gameTime);
                         }
-                        else if (_velocity.X < 0)
+                        else
                         {
-                            _velocity.X += _deceleration * delta;
-                            if (_velocity.X > 0) _velocity.X = 0;
-                        }
+                            if (_velocity.X > 0)
+                            {
+                                _velocity.X -= _deceleration * delta;
+                                if (_velocity.X < 0) _velocity.X = 0;
+                            }
+                            else if (_velocity.X < 0)
+                            {
+                                _velocity.X += _deceleration * delta;
+                                if (_velocity.X > 0) _velocity.X = 0;
+                            }
 
-                        if (!_isJumping)
+                            if (!_isJumping)
+                            {
+                                _frame = 0; // Reset to idle frame if no movement
+                            }
+                        }
+                    }
+                    #endregion
+
+                    #region isJumping
+                    if (_isJumping)
+                    {
+                        // Apply gravity while jumping
+                        _velocity.Y += _gravity * delta;
+                    }
+                    #endregion
+
+                    #region UpdatePosition
+                    // Update position
+                    _position.X += _velocity.X * delta;
+                    _position.Y += _velocity.Y * delta;
+
+
+                    #endregion
+
+                    #region UpdatePlayerHitbox
+                    // Update the player hitbox position
+                    _playerHitbox.X = (int)_position.X + (_frameWidth / 4) + 5;
+                    _playerHitbox.Y = (int)_position.Y + _frameHeight / 2;
+
+                    #endregion
+
+                    #region UpdatePurplePortalHitbox
+                    // Update the other sprite's hitbox position
+                    _purplePortalHitbox.X = (int)_purplePortalPosition.X;
+                    _purplePortalHitbox.Y = (int)_purplePortalPosition.Y;
+                    #endregion
+
+                    #region Boundaries
+                    // Define the margin for the left and right boundaries
+                    int leftMargin = -50;  // Allow some space off the left side
+                    int rightMargin = 50;  // Allow some space off the right side
+
+                    // Ensure the player stays within the screen bounds with the added margins
+                    _position.X = MathHelper.Clamp(_position.X, leftMargin, GraphicsDevice.Viewport.Width - _frameWidth + rightMargin);
+                    _position.Y = MathHelper.Clamp(_position.Y, 0, GraphicsDevice.Viewport.Height - _frameHeight);
+                    #endregion
+
+                    #region groundCollisionsLevel1
+                    if (_currentLevel == 1)
+                    {
+                        // Check for collisions with each ground rectangle
+                        foreach (var groundCollision in groundCollisionsLevel1)
                         {
-                            _frame = 0; // Reset to idle frame if no movement
+                            _isGrounded = false;
+                            canJump = false; // Allow jumping again
+                            _isJumping = true;
+
+                            if (_playerHitbox.Intersects(groundCollision))
+                            {
+                                // Ensure player stays on top of the ground
+                                _position.Y = groundCollision.Top - _playerHitbox.Height;
+                                _velocity.Y = 0; // Stop falling
+                                _isGrounded = true;
+                                canJump = true; // Allow jumping again
+                                _isJumping = false;
+                                break; // Exit loop after detecting ground collision
+                            }
                         }
                     }
-                }
-                #endregion
+                    #endregion
 
-                #region isJumping
-                if (_isJumping)
-                {
-                    // Apply gravity while jumping
-                    _velocity.Y += _gravity * delta;
-                }
-                #endregion
-
-                #region UpdatePosition
-                // Update position
-                _position.X += _velocity.X * delta;
-                _position.Y += _velocity.Y * delta;
-
-
-                #endregion
-
-                #region UpdatePositionCodeStein
-                /*
-                // First calculate the future hitbox of the player
-                float newPosX = _position.X + _velocity.X * delta;
-                float newPosY = _position.Y + _velocity.Y * delta;
-
-                // Create a hitbox that only moves horizontally, if we collide
-                // with something after we move then we know we hit something and should 
-                // change our position to be right next to the element we collided with
-
-                Rectangle futureHorizontalHitbox =
-                    new Rectangle((int)newPosX, _playerHitbox.Y, _playerHitbox.Width, _playerHitbox.Height);
-                if ((CollidesWithTerrain(futureHorizontalHitbox) is var otherHorizontalHitbox) && otherHorizontalHitbox != null)
-                {
-                    // We are intersecting, if we are moving to the right (positive velocity) we should move
-                    // right until we are hitting the other element
-                    if (_velocity.X > 0) // Moving to the right
+                    #region groundCollisionLevel2
+                    if (_currentLevel == 2)
                     {
-                        _position.X = otherHorizontalHitbox.Value.X - _tileWidth - 1;
+                        // Check for collisions with each ground rectangle
+                        foreach (var groundCollision in groundCollisionsLevel2)
+                        {
+                            _isGrounded = false;
+                            canJump = false; // Allow jumping again
+                            _isJumping = true;
+
+                            if (_playerHitbox.Intersects(groundCollision))
+                            {
+                                // Ensure player stays on top of the ground
+                                _position.Y = groundCollision.Top - _playerHitbox.Height;
+                                _velocity.Y = 0; // Stop falling
+                                _isGrounded = true;
+                                canJump = true; // Allow jumping again
+                                _isJumping = false;
+                                break; // Exit loop after detecting ground collision
+                            }
+                        }
                     }
-                    else // Moving left
+                    #endregion
+
+                    #region GroundCollision
+                    // Simulate ground collision
+                    if (_position.Y >= 350) // GraphicsDevice.Viewport.Height - _frameHeight
                     {
-                        _position.X = otherHorizontalHitbox.Value.X + 1;
+                        _position.Y = 350; // GraphicsDevice.Viewport.Height - _frameHeight
+                        _velocity.Y = 0;
+                        _isGrounded = true;
+                        _isJumping = false;
                     }
-                    _velocity.X = 0;
-                }
-                else
-                {
-                    _position.X = newPosX;
-                }
+                    #endregion
 
-                // Create a hitbox that only moves vertically, if we collide
-                // with something after we move then we know we hit something and should 
-                // change our position to be right next to the element we collided with
-
-                Rectangle futureVerticalHitbox =
-                    new Rectangle((int)_position.X, (int)newPosY, _playerHitbox.Width, _playerHitbox.Height);
-                if ((CollidesWithTerrain(futureVerticalHitbox) is var otherVerticalHitbox) && otherVerticalHitbox != null)
-                {
-                    // We are intersecting, if we are moving down (positive velocity) we should move
-                    // up until we are hitting the other element
-                    if (_velocity.Y > 0) // Moving down
+                    #region CollisionPlayerAndPurplePortal
+                    // Check for collisions with between player and purple portal only if on level 1
+                    if (_currentLevel == 1 || isLevel2Active == false)
                     {
-                        _position.Y = otherVerticalHitbox.Value.Y - _tileHeight - 1;
+                        // Update portal animation if necessary
+                        UpdatePurplePortalAnimation(gameTime);
+
+                        // Check for collision between player and portal
+                        if (_playerHitbox.Intersects(_purplePortalHitbox))
+                        {
+                            // Move to level 2
+                            _currentLevel = 2;
+                            LoadLevel2();
+                        }
                     }
-                    else // Moving up
+                    #endregion
+
+                    #region CollisionPlayerAndGreenPortal
+                    // Check for collisions with between player and green portal only if on level 2
+                    if (_currentLevel == 2 || isLevel2Active == true)
                     {
-                        _position.Y = otherVerticalHitbox.Value.Y + 1;
+                        // Update portal animation if necessary
+                        UpdateGreenPortalAnimation(gameTime);
+
+                        // Check for collision between player and portal
+                        if (_playerHitbox.Intersects(_greenPortalHitbox))
+                        {
+                            // Move to level 1
+                            _currentLevel = 1;
+                            LoadLevel1();
+                        }
                     }
-                    _velocity.Y = 0;
-                    _isGrounded = true;
-                    _isJumping = false;
-                    Debug.WriteLine("Terrain collision");
-                }
-                else if (futureVerticalHitbox.Y >= GraphicsDevice.Viewport.Height - _playerHitbox.Height) // Falling off bottom of screen
-                {
-                    _position.Y = GraphicsDevice.Viewport.Height - _playerHitbox.Height - 1;
-                    Debug.WriteLine("Bottom screen collision");
-                }
-                else if (futureVerticalHitbox.Y <= 0)
-                {
-                    _position.Y = 1;
-                    Debug.WriteLine("Top screen colission");
-                }
-                else
-                {
-                    _position.Y = newPosY;
-                    _velocity.Y += _gravity * delta;
-                    Debug.WriteLine("No colission");
-                }
-                */
-                #endregion
+                    #endregion
 
-                #region UpdatePlayerHitbox
-                // Update the player hitbox position
-                _playerHitbox.X = (int)_position.X + (_frameWidth / 4) + 5;
-                _playerHitbox.Y = (int)_position.Y + _frameHeight / 2;
-
-                #endregion
-
-                #region UpdatePurplePortalHitbox
-                // Update the other sprite's hitbox position
-                _purplePortalHitbox.X = (int)_purplePortalPosition.X;
-                _purplePortalHitbox.Y = (int)_purplePortalPosition.Y;
-                #endregion
-
-                #region Boundaries
-                // Define the margin for the left and right boundaries
-                int leftMargin = -50;  // Allow some space off the left side
-                int rightMargin = 50;  // Allow some space off the right side
-
-                // Ensure the player stays within the screen bounds with the added margins
-                _position.X = MathHelper.Clamp(_position.X, leftMargin, GraphicsDevice.Viewport.Width - _frameWidth + rightMargin);
-                _position.Y = MathHelper.Clamp(_position.Y, 0, GraphicsDevice.Viewport.Height - _frameHeight);
-                #endregion
-
-                #region GroundCollision
-                // Simulate ground collision
-                if (_position.Y >= 350) // GraphicsDevice.Viewport.Height - _frameHeight
-                {
-                    _position.Y = 350; // GraphicsDevice.Viewport.Height - _frameHeight
-                    _velocity.Y = 0;
-                    _isGrounded = true;
-                    _isJumping = false;
-                }
-                #endregion
-
-                #region CollisionPlayerAndPurplePortal
-                // Check for collisions with between player and purple portal only if on level 1
-                if (_currentLevel == 1 || isLevel2Active == false)
-                {
-                    // Update portal animation if necessary
-                    UpdatePurplePortalAnimation(gameTime);
-
-                    // Check for collision between player and portal
-                    if (_playerHitbox.Intersects(_purplePortalHitbox))
+                    #region UpdateCurrentLevel
+                    // Update the current level (this will draw the new level after transition)
+                    if (isLevel2Active)
                     {
-                        // Move to level 2
-                        _currentLevel = 2;
-                        LoadLevel2();
+                        // Update the level 2 logic
+                        UpdateLevel2(gameTime);
                     }
-                }
-                #endregion
-
-                #region CollisionPlayerAndGreenPortal
-                // Check for collisions with between player and green portal only if on level 2
-                if (_currentLevel == 2 || isLevel2Active == true)
-                {
-                    // Update portal animation if necessary
-                    UpdateGreenPortalAnimation(gameTime);
-
-                    // Check for collision between player and portal
-                    if (_playerHitbox.Intersects(_greenPortalHitbox))
+                    else
                     {
-                        // Move to level 1
-                        _currentLevel = 1;
+                        // Update the level 1 logic
+                        UpdateLevel1(gameTime);
+                    }
+                    #endregion
+
+                    #region UpdateCoins
+                    // Update the coins based on the current level
+                    if (_currentLevel == 1)
+                    {
+                        UpdateCoins(_coinsLevel1, gameTime);
+                    }
+                    else if (_currentLevel == 2)
+                    {
+                        UpdateCoins(_coinsLevel2, gameTime);
+                    }
+                    #endregion
+
+                    #region ScoreOverlay
+                    _scoreOverlay.UpdateScore(_score);  // Update the UI screen with the latest score
+                    #endregion
+
+                    #region UpdateScore
+                    if (_score >= MaxScore)
+                    {
+                        _gameWon = true;
+                    }
+                    #endregion
+
+                    #region UpdateFireTraps
+                    // Update the coins based on the current level
+                    if (_currentLevel == 1)
+                    {
+                        UpdateFireTraps(_fireTrapsLevel1, gameTime);
+                    }
+                    else if (_currentLevel == 2)
+                    {
+                        UpdateFireTraps(_fireTrapsLevel2, gameTime);
+                    }
+                    #endregion
+
+                    #region Alien
+                    if (_currentLevel == 1)
+                    {
+                        alienLevel1.Update(gameTime);
+                        CheckCollisionAlien(alienLevel1.Hitbox);
+                    }
+                    else if (_currentLevel == 2)
+                    {
+                        alienLevel2.Update(gameTime);
+                        CheckCollisionAlien(alienLevel2.Hitbox);
+                    }
+                    #endregion
+
+                    #region Demon
+                    if (_currentLevel == 1)
+                    {
+                        demonLevel1.Update(gameTime);
+                        CheckCollision(demonLevel1.Hitbox);
+                    }
+                    else if (_currentLevel == 2)
+                    {
+                        demonLevel2.Update(gameTime);
+                        CheckCollision(demonLevel2.Hitbox);
+                    }
+                    #endregion
+
+                    #region HealthOverlay
+                    _healthOverlay.UpdateHealth(_playerHealth);  // Update the UI screen with the latest health
+                    #endregion
+
+                    #region UpdateHealth
+                    if (_playerHealth <= _minPlayerHealth)
+                    {
+                        _gameLost = true;
+                    }
+                    #endregion
+
+                    #region FlickeringPlayer
+                    double elapsed = gameTime.ElapsedGameTime.TotalSeconds;
+
+                    // Handle invulnerability and flickering
+                    if (_isInvulnerable)
+                    {
+                        _invulnerabilityTime -= elapsed;
+                        _flickerTime += elapsed;
+
+                        if (_flickerTime >= _flickerInterval)
+                        {
+                            _isVisible = !_isVisible; // Toggle visibility
+                            _flickerTime = 0;
+                        }
+
+                        if (_invulnerabilityTime <= 0)
+                        {
+                            _isInvulnerable = false;
+                            _isVisible = true; // Ensure visibility is reset
+                        }
+                    }
+                    #endregion
+                }
+
+                #region _gameLost
+                if (_gameLost)
+                {
+                    if (_gameOverScreen.Update(gameTime))
+                    {
+                        RestartGame();
                         LoadLevel1();
                     }
                 }
                 #endregion
 
-                #region UpdateCurrentLevel
-                // Update the current level (this will draw the new level after transition)
-                if (isLevel2Active)
+                #region _gameWon
+                else if (_gameWon)
                 {
-                    // Update the level 2 logic
-                    UpdateLevel2(gameTime);
-                }
-                else
-                {
-                    // Update the level 1 logic
-                    UpdateLevel1(gameTime);
-                }
-                #endregion
-
-                /*
-                // Check collision with each tile
-                for (int y = 0; y < _levelData.GetLength(0); y++)
-                {
-                    for (int x = 0; x < _levelData.GetLength(1); x++)
+                    if (_winScreen.Update(gameTime))
                     {
-                        TileType tileType = _levelData[y, x];
-                        Vector2 tilePosition = new Vector2(x * _tileWidth, y * _tileHeight);
-
-                        if (CheckTileCollision(_playerHitbox, tilePosition, tileType))
-                        {
-                            // Handle the collision (e.g., stop the player's movement, adjust position, etc.)
-                            HandleCollision(gameTime);
-                        }
+                        RestartGame();
+                        LoadLevel1();
                     }
                 }
-                */
-
-                #region UpdateCoins
-                // Update the coins based on the current level
-                if (_currentLevel == 1)
-                {
-                    UpdateCoins(_coinsLevel1, gameTime);
-                }
-                else if (_currentLevel == 2)
-                {
-                    UpdateCoins(_coinsLevel2, gameTime);
-                }
                 #endregion
 
-                #region ScoreOverlay
-                _scoreOverlay.UpdateScore(_score);  // Update the UI screen with the latest score
-                #endregion
-
-                #region UpdateScore
-                if (_score >= MaxScore)
-                {
-                    _gameWon = true;
-                }
-                #endregion
+                base.Update(gameTime);
             }
-            #region _gameWon
-            else
-            {
-                if (_winScreen.Update(gameTime))
-                {
-                    RestartGame();
-                    LoadLevel1();
-                }
-            }
-            #endregion
-
-            base.Update(gameTime);
         }
 
         protected override void Draw(GameTime gameTime)
@@ -953,41 +955,101 @@ namespace DamnedOfTheDeath
 
             _spriteBatch.Begin();
 
-            if (!_gameWon)
+            // Draw the ground collision rectangles (for debugging purposes)
+            Texture2D groundTexture = new Texture2D(GraphicsDevice, 1, 1);
+            //groundTexture.SetData(new[] { Color.Green });
+
+            if (!_gameStarted)
+            {
+                _startScreen.Draw(_spriteBatch);
+            }
+            else if (!_gameWon && !_gameLost)
             {
                 // Level 2
                 if (_currentLevel == 2 || isLevel2Active == true)
                 {
+                    _spriteBatch.Draw(_levelsBackground, new Rectangle(0, 0, 1600, 480), Color.White);
                     DrawLevel2(gameTime);
                     DrawGreenPortal();
                     DrawCoins(_coinsLevel2);
+                    DrawFireTraps(_fireTrapsLevel2);
+                    alienLevel2.Draw(_spriteBatch);
+                    demonLevel2.Draw(_spriteBatch);
+
+                    foreach(var groundcollision in groundCollisionsLevel2)
+                    {
+                        _spriteBatch.Draw(groundTexture, groundcollision, Color.White * 0.5f);
+                    }
                 }
                 // Level 1
                 else if (_currentLevel == 1 || isLevel2Active == false)
                 {
+                    _spriteBatch.Draw(_levelsBackground, new Rectangle(0, 0, 1600, 480), Color.White);
                     DrawLevel(gameTime);
                     DrawPurplePortal();
                     DrawCoins(_coinsLevel1);
+                    DrawFireTraps(_fireTrapsLevel1);
+                    alienLevel1.Draw(_spriteBatch);
+                    demonLevel1.Draw(_spriteBatch);
+
+                    foreach (var groundcollision in groundCollisionsLevel1)
+                    {
+                        _spriteBatch.Draw(groundTexture, groundcollision, Color.White * 0.5f);
+                    }
                 }
 
-                DrawPlayer();
+                if (_isVisible)
+                {
+                    DrawPlayer();
+                }
 
                 _scoreOverlay.Draw(_spriteBatch);  // Draw the UI screen with the score
+                _healthOverlay.Draw(_spriteBatch); // Draw the UI screen with the health
             }
-            else
+            else if(_gameWon)
             {
                 _winScreen.Draw(_spriteBatch);  // Draw the Win Screen
             }
+            else if(_gameLost)
+            {
+                _gameOverScreen.Draw(_spriteBatch); // Draw the Game Over Screen
+            }
 
-                _spriteBatch.End();
+            _spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+
+        private void CheckCollision(Rectangle demonHitbox)
+        {
+            if (demonHitbox.Intersects(_playerHitbox) && !_isInvulnerable)
+            {
+                _playerHealth -= 1;
+                _isInvulnerable = true;
+                _invulnerabilityTime = 3.0; // 3 seconds of invulnerability
+                _flickerTime = 0;
+                _isVisible = true; // Reset visibility
+            }
+        }
+
+        private void CheckCollisionAlien(Rectangle alienHitbox)
+        {
+            if (alienHitbox.Intersects(_playerHitbox) && !_isInvulnerable)
+            {
+                _playerHealth -= 1;
+                _isInvulnerable = true;
+                _invulnerabilityTime = 3.0; // 3 seconds of invulnerability
+                _flickerTime = 0;
+                _isVisible = true; // Reset visibility
+            }
         }
 
         private void RestartGame()
         {
             _score = 0;
+            _playerHealth = 3;
             _gameWon = false;
+            _gameLost = false;
             _position = new Vector2(-40, 350);
             isLevel2Active = false;
 
@@ -1003,6 +1065,15 @@ namespace DamnedOfTheDeath
             {
                 coin.IsVisible = true;
             }
+        }
+
+        private Texture2D CreateButtonTexture(int width, int height, Color color)
+        {
+            Texture2D texture = new Texture2D(GraphicsDevice, width, height);
+            Color[] data = new Color[width * height];
+            for (int i = 0; i < data.Length; ++i) data[i] = color;
+            texture.SetData(data);
+            return texture;
         }
 
         private void UpdateCoins(List<Coin> coins, GameTime gameTime)
@@ -1025,12 +1096,40 @@ namespace DamnedOfTheDeath
             }
         }
 
+        private void UpdateFireTraps(List<FireTrap> fireTraps, GameTime gameTime)
+        {
+            // Update all firetraps in the current list and check for collision
+            foreach (var firetrap in fireTraps)
+            {
+                firetrap.Update(gameTime);
+
+                // Check for collision between player and each firetrap
+                if (firetrap.GetHitbox().Intersects(_playerHitbox) && !_isInvulnerable)
+                {
+                    _playerHealth -= 1;
+                    _isInvulnerable = true;
+                    _invulnerabilityTime = 3.0; // 3 seconds of invulnerability
+                    _flickerTime = 0;
+                    _isVisible = true; // Reset visibility
+                }
+            }
+        }
+
         private void DrawCoins(List<Coin> coins)
         {
             // Draw all visible coins in the current list
             foreach (var coin in coins)
             {
                 coin.Draw(_spriteBatch);
+            }
+        }
+
+        private void DrawFireTraps(List<FireTrap> fireTraps)
+        {
+            // Draw all firetraps in the current list
+            foreach (var firetrap in fireTraps)
+            {
+                firetrap.Draw(_spriteBatch);
             }
         }
 
@@ -1120,7 +1219,7 @@ namespace DamnedOfTheDeath
 
             // Set the data for the rectangle hitbox of the player
             Texture2D rect = new Texture2D(GraphicsDevice, 1, 1);
-            rect.SetData(new[] { Color.Red });
+            //rect.SetData(new[] { Color.Red });
             // Draw the hitbox of the player
             _spriteBatch.Draw(rect, _playerHitbox, Color.White * 0.5f);
         }
@@ -1131,7 +1230,7 @@ namespace DamnedOfTheDeath
             _spriteBatch.Draw(_purplePortalSpriteSheet, _purplePortalPosition, _purplePortalFrames[_purplePortalCurrentFrame], Color.White);
 
             // Draw the hitbox for the portal in red
-            _spriteBatch.Draw(_hitboxPurplePortalTexture, _purplePortalHitbox, Color.Purple * 0.5f); // semi-transparent red
+            //_spriteBatch.Draw(_hitboxPurplePortalTexture, _purplePortalHitbox, Color.Purple * 0.5f); // semi-transparent red
         }
 
         private void DrawGreenPortal()
@@ -1140,16 +1239,7 @@ namespace DamnedOfTheDeath
             _spriteBatch.Draw(_greenPortalSpriteSheet, _greenPortalPosition, _greenPortalFrames[_greenPortalCurrentFrame], Color.White);
 
             // Draw the hitbox for the portal in red
-            _spriteBatch.Draw(_hitboxGreenPortalTexture, _greenPortalHitbox, Color.Green * 0.5f); // semi-transparent red
-        }
-
-        private Texture2D CreateRectangleTexture(int width, int height, Color color)
-        {
-            Texture2D texture = new Texture2D(GraphicsDevice, width, height);
-            Color[] data = new Color[width * height];
-            for (int i = 0; i < data.Length; ++i) data[i] = color;
-            texture.SetData(data);
-            return texture;
+            //_spriteBatch.Draw(_hitboxGreenPortalTexture, _greenPortalHitbox, Color.Green * 0.5f); // semi-transparent red
         }
 
         private void AnimateAttack(GameTime gameTime)
@@ -1217,280 +1307,6 @@ namespace DamnedOfTheDeath
             }
         }
 
-        private void InitializeCollisionMasks()
-        {
-            /*
-            _collisionMasks = new Dictionary<CollisionType, List<Rectangle>>()
-            {
-                // Full tile - covers the entire tile area
-                {
-                    CollisionType.Full, new List<Rectangle>
-                    {
-                        new Rectangle(0, 0, _tileWidth, _tileHeight)
-                    }
-                },
-
-                // Empty tile - no collision
-                {
-                    CollisionType.Empty, new List<Rectangle>()
-                    // No rectangles, meaning no collision area
-                },
-
-                // Top half filled - collision only on the top half of the tile
-                {
-                    CollisionType.HalfFilledTop, new List<Rectangle>
-                    {
-                        new Rectangle(0, 0, _tileWidth, _tileHeight / 2)
-                    }
-                },
-
-                // Bottom half filled - collision only on the bottom half of the tile
-                {
-                    CollisionType.HalfFilledBottom, new List<Rectangle>
-                    {
-                        new Rectangle(0, _tileHeight / 2, _tileWidth, _tileHeight / 2)
-                    }
-                },
-
-                // Diagonal from bottom-left to top-right - approximated with two triangles
-                {
-                    CollisionType.DiagonalLeftBottom, new List<Rectangle>
-                    {
-                        // Bottom-left triangle, approximated with a rectangular mask
-                        new Rectangle(0, _tileHeight / 2, _tileWidth / 2, _tileHeight / 2),
-                        // Top-right triangle, approximated with a rectangular mask
-                        new Rectangle(_tileWidth / 2, 0, _tileWidth / 2, _tileHeight / 2)
-                    }
-                },
-
-                // Diagonal from bottom-right to top-left - approximated with two triangles
-                {
-                    CollisionType.DiagonalRightBottom, new List<Rectangle>
-                    {
-                        // Bottom-right triangle, approximated with a rectangular mask
-                        new Rectangle(_tileWidth / 2, _tileHeight / 2, _tileWidth / 2, _tileHeight / 2),
-                        // Top-left triangle, approximated with a rectangular mask
-                        new Rectangle(0, 0, _tileWidth / 2, _tileHeight / 2)
-                    }
-                }
-            };
-            */
-
-            int tileWidth = 32;  // Assuming each tile is 32x32 pixels
-            int tileHeight = 32;
-
-            _collisionMasks[CollisionType.Empty] = new List<Rectangle>(); // No collision
-
-            _collisionMasks[CollisionType.Full] = new List<Rectangle>
-    {
-        new Rectangle(0, 0, tileWidth, tileHeight) // Full tile collision
-    };
-
-            _collisionMasks[CollisionType.HalfFilledTop] = new List<Rectangle>
-    {
-        new Rectangle(0, 0, tileWidth, tileHeight / 2) // Top half collision
-    };
-
-            _collisionMasks[CollisionType.HalfFilledBottom] = new List<Rectangle>
-    {
-        new Rectangle(0, tileHeight / 2, tileWidth, tileHeight / 2) // Bottom half collision
-    };
-
-            _collisionMasks[CollisionType.DiagonalLeftBottom] = new List<Rectangle>
-    {
-        new Rectangle(0, tileHeight / 2, tileWidth / 2, tileHeight / 2),  // Left bottom collision (half diagonal)
-        new Rectangle(tileWidth / 2, tileHeight / 2, tileWidth / 2, tileHeight / 2) // Extend to cover entire bottom
-    };
-
-            _collisionMasks[CollisionType.DiagonalRightBottom] = new List<Rectangle>
-    {
-        new Rectangle(tileWidth / 2, tileHeight / 2, tileWidth / 2, tileHeight / 2), // Right bottom collision (half diagonal)
-        new Rectangle(0, tileHeight / 2, tileWidth / 2, tileHeight / 2) // Extend to cover entire bottom
-    };
-        }
-
-        private bool CheckTileCollision(Rectangle playerRect, Vector2 tilePosition, TileType tileType)
-        {
-            if (_tileCollisions.TryGetValue(tileType, out CollisionType collisionType))
-            {
-                if (_collisionMasks.TryGetValue(collisionType, out List<Rectangle> masks))
-                {
-                    foreach (var mask in masks)
-                    {
-                        Rectangle tileCollisionRect = new Rectangle(
-                            (int)tilePosition.X + mask.X,
-                            (int)tilePosition.Y + mask.Y,
-                            mask.Width,
-                            mask.Height
-                        );
-
-                        if (playerRect.Intersects(tileCollisionRect))
-                        {
-                            return true; // Collision detected
-                        }
-                    }
-                }
-            }
-
-            return false; // No collision
-        }
-
-        private void HandleCollision(GameTime gameTime)
-        {
-            // Define the player's hitbox based on its position and size
-            Rectangle playerRect = new Rectangle((int)_position.X, (int)_position.Y, _frameWidth, _frameHeight);
-
-            // Store the player's position before collision handling
-            Vector2 newPlayerPosition = _position;
-
-            // Reset grounded state
-            bool wasGrounded = _isGrounded;  // Store the previous grounded state
-            _isGrounded = false;
-
-            // Loop through the 2D array of tiles
-            for (int y = 0; y < 15; y++)
-            {
-                for (int x = 0; x < 50; x++)
-                {
-                    TileType tileType = _currentLevelData[y, x];
-
-                    if (tileType != TileType.Empty) // Skip empty tiles
-                    {
-                        // Get the corresponding CollisionType for this tile
-                        if (_tileCollisions.TryGetValue(tileType, out CollisionType collisionType))
-                        {
-                            // Calculate the tile's position based on its indices in the 2D array
-                            Vector2 tilePosition = new Vector2(x * _tileWidth, y * _tileHeight);
-
-                            // Get the list of rectangles that define the collision masks for this tile
-                            List<Rectangle> collisionMasks = _collisionMasks[collisionType];
-
-                            // Check each collision mask against the player's rectangle
-                            foreach (var mask in collisionMasks)
-                            {
-                                // Calculate the actual position of the collision mask
-                                Rectangle tileRect = new Rectangle(
-                                    (int)tilePosition.X + mask.X,
-                                    (int)tilePosition.Y + mask.Y,
-                                    mask.Width,
-                                    mask.Height);
-
-                                // Check if the player's rectangle intersects with the tile's collision mask
-                                if (playerRect.Intersects(tileRect))
-                                {
-                                    // Get the intersection depth of the collision
-                                    Vector2 depth = GetIntersectionDepth(playerRect, tileRect);
-
-                                    // Resolve collision on the Y axis first (vertical collision handling)
-                                    if (Math.Abs(depth.Y) < Math.Abs(depth.X))
-                                    {
-                                        if (depth.Y < 0) // Player is moving down (colliding from above)
-                                        {
-                                            newPlayerPosition.Y += depth.Y;
-                                            _isGrounded = true; // Player is grounded
-                                            _velocity.Y = 0;
-                                        }
-                                        else if (depth.Y > 0) // Player is moving up (colliding from below)
-                                        {
-                                            newPlayerPosition.Y += depth.Y;
-                                            _velocity.Y = 0;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        // Handle horizontal collision (X axis)
-                                        newPlayerPosition.X += depth.X;
-                                        _velocity.X = 0;
-                                    }
-
-                                    // Update the player rectangle to the new position after collision
-                                    playerRect = new Rectangle((int)newPlayerPosition.X, (int)newPlayerPosition.Y, _frameWidth, _frameHeight);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Apply the new position after resolving all collisions
-            _position = newPlayerPosition;
-
-            // Check if the player was grounded before and is still grounded after resolving collisions
-            if (wasGrounded && !_isGrounded)
-            {
-                _velocity.Y += _gravity * (float)gameTime.ElapsedGameTime.TotalSeconds; // Apply gravity if player is no longer grounded
-            }
-
-            // Handle jump input (if the jump key is pressed and the player is grounded)
-            if (_isGrounded && _isJumping)
-            {
-                _velocity.Y += _gravity * (float)gameTime.ElapsedGameTime.TotalSeconds; // Apply jump force
-                _isGrounded = false; // The player is no longer grounded after jumping
-            }
-
-            // Update the player's position based on velocity
-            _position += _velocity * (float)gameTime.ElapsedGameTime.TotalSeconds;
-
-            // Apply gravity if the player is not grounded
-            if (!_isGrounded)
-            {
-                _velocity.Y += _gravity * (float)gameTime.ElapsedGameTime.TotalSeconds;
-            }
-        }
-
-        private Vector2 GetIntersectionDepth(Rectangle rectA, Rectangle rectB)
-        {
-            // Calculate half sizes
-            float halfWidthA = rectA.Width / 2.0f;
-            float halfHeightA = rectA.Height / 2.0f;
-            float halfWidthB = rectB.Width / 2.0f;
-            float halfHeightB = rectB.Height / 2.0f;
-
-            // Calculate centers
-            Vector2 centerA = new Vector2(rectA.Left + halfWidthA, rectA.Top + halfHeightA);
-            Vector2 centerB = new Vector2(rectB.Left + halfWidthB, rectB.Top + halfHeightB);
-
-            // Calculate current and minimum non-intersecting distances between centers
-            float distanceX = centerA.X - centerB.X;
-            float distanceY = centerA.Y - centerB.Y;
-            float minDistanceX = halfWidthA + halfWidthB;
-            float minDistanceY = halfHeightA + halfHeightB;
-
-            // Calculate and return intersection depths
-            float depthX = distanceX > 0 ? minDistanceX - distanceX : -minDistanceX - distanceX;
-            float depthY = distanceY > 0 ? minDistanceY - distanceY : -minDistanceY - distanceY;
-
-            return new Vector2(depthX, depthY);
-        }
-
-        private Rectangle? CollidesWithTerrain(Rectangle hitbox)
-        {
-            for (int y = 0; y < _currentLevelData.GetLength(0); y++)
-            {
-                for (int x = 0; x < _currentLevelData.GetLength(1); x++)
-                {
-                    TileType tileType = _currentLevelData[y, x];
-                    // Only draw non-empty tiles
-                    if (tileType != TileType.Empty)
-                    {
-                        Vector2 position = new Vector2(x * _tileWidth, y * _tileHeight);
-                        Rectangle ourHitBox = new Rectangle((int)position.X, (int)position.Y, _tileWidth, _tileHeight);
-                        if (ourHitBox.Intersects(hitbox))
-                        {
-                            Debug.WriteLine("---( hitbox of player )---");
-                            Debug.WriteLine(hitbox);
-                            Debug.WriteLine("---( hitbox of tile )---");
-                            Debug.WriteLine(ourHitBox);
-                            Debug.WriteLine("---( tile type )---");
-                            Debug.WriteLine((tileType));
-                            return ourHitBox;
-                        };
-                    }
-                }
-            }
-            return null;
-        }
-
         private void LoadLevel1()
         {
             // Set the flag to indicate level 1 is active
@@ -1530,6 +1346,5 @@ namespace DamnedOfTheDeath
             // Handle input, collisions, and any specific logic for level 2
             // Similar to what you have for level 1, but tailored to level 2's layout and rules
         }
-
     }
 }

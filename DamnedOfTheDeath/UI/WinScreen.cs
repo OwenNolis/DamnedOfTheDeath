@@ -12,14 +12,20 @@ namespace DamnedOfTheDeath.UI
     public class WinScreen
     {
         private SpriteFont _font;
+        private SpriteFont _titleFont;
+        private Texture2D _buttonTexture;
+        private Texture2D _backgroundTexture;
         private Vector2 _victoryPosition;
         private Rectangle _buttonRectangle;
         private Vector2 _buttonTextPosition;
         private bool _isButtonHovered;
 
-        public WinScreen(SpriteFont font, GraphicsDevice graphicsDevice)
+        public WinScreen(SpriteFont font, SpriteFont titleFont, Texture2D buttonTexture, GraphicsDevice graphicsDevice, Texture2D backgroundTexture)
         {
             _font = font;
+            _titleFont = titleFont;
+            _buttonTexture = buttonTexture;
+            _backgroundTexture = backgroundTexture;
             int screenWidth = graphicsDevice.Viewport.Width;
             int screenHeight = graphicsDevice.Viewport.Height;
 
@@ -52,11 +58,14 @@ namespace DamnedOfTheDeath.UI
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.DrawString(_font, "Victory", _victoryPosition, Color.Yellow);
+            // Draw the background
+            spriteBatch.Draw(_backgroundTexture, new Rectangle(0, 0, 1600, 480), Color.White);
+
+            spriteBatch.DrawString(_titleFont, "Victory", _victoryPosition, Color.Black);
 
             // Draw the button
-            Color buttonColor = _isButtonHovered ? Color.Gray : Color.White;
-            spriteBatch.Draw(CreateRectangleTexture(spriteBatch.GraphicsDevice, _buttonRectangle.Width, _buttonRectangle.Height, buttonColor), _buttonRectangle, Color.White);
+            Color buttonColor = _isButtonHovered ? Color.DarkGreen : Color.White;
+            spriteBatch.Draw(CreateRectangleTexture(spriteBatch.GraphicsDevice, _buttonRectangle.Width, _buttonRectangle.Height, buttonColor), _buttonRectangle, Color.IndianRed);
 
             // Draw the button text
             spriteBatch.DrawString(_font, "Play Again", _buttonTextPosition, Color.Black);

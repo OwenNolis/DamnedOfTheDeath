@@ -12,21 +12,25 @@ namespace DamnedOfTheDeath.UI
     public class StartScreen
     {
         private SpriteFont _font;
+        private SpriteFont _titleFont;
         private Texture2D _buttonTexture;
+        private Texture2D _backgroundTexture;
         private Rectangle _startButtonRect;
         private Rectangle _level1ButtonRect;
         private Rectangle _level2ButtonRect;
         private MouseState _previousMouseState;
 
-        public StartScreen(SpriteFont font, Texture2D buttonTexture)
+        public StartScreen(SpriteFont font, SpriteFont titleFont, Texture2D buttonTexture, Texture2D backgroundTexture)
         {
             _font = font;
+            _titleFont = titleFont;
             _buttonTexture = buttonTexture;
+            _backgroundTexture = backgroundTexture;
 
             // Position and size of the buttons
-            _startButtonRect = new Rectangle(340, 300, 120, 50);  // Centered Start Button
-            _level1ButtonRect = new Rectangle(200, 400, 120, 50);  // Level 1 Button
-            _level2ButtonRect = new Rectangle(460, 400, 120, 50);  // Level 2 Button
+            _startButtonRect = new Rectangle(800, 240, 120, 50);  // Centered Start Button
+            _level1ButtonRect = new Rectangle(700, 350, 120, 50);  // Level 1 Button
+            _level2ButtonRect = new Rectangle(900, 350, 120, 50);  // Level 2 Button
         }
 
         public int Update(GameTime gameTime)
@@ -59,21 +63,24 @@ namespace DamnedOfTheDeath.UI
 
         public void Draw(SpriteBatch spriteBatch)
         {
+            // Draw the background
+            spriteBatch.Draw(_backgroundTexture, new Rectangle(0, 0, 1600, 480), Color.White);
+
             // Draw the title text
             string title = "Damned Of The Death";
-            Vector2 titleSize = _font.MeasureString(title);
-            Vector2 titlePosition = new Vector2((800 - titleSize.X) / 2, 200);  // Centered title
-            spriteBatch.DrawString(_font, title, titlePosition, Color.White);
+            Vector2 titleSize = _titleFont.MeasureString(title);
+            Vector2 titlePosition = new Vector2((1700 - titleSize.X) / 2, 100);  // Centered title
+            spriteBatch.DrawString(_titleFont, title, titlePosition, Color.Black);
 
             // Draw the buttons
-            spriteBatch.Draw(_buttonTexture, _startButtonRect, Color.White);
-            spriteBatch.DrawString(_font, "Start", new Vector2(_startButtonRect.X + 20, _startButtonRect.Y + 15), Color.Black);
+            spriteBatch.Draw(_buttonTexture, _startButtonRect, Color.IndianRed);
+            spriteBatch.DrawString(_font, "Start", new Vector2(_startButtonRect.X + 30, _startButtonRect.Y + 10), Color.Black);
 
-            spriteBatch.Draw(_buttonTexture, _level1ButtonRect, Color.White);
-            spriteBatch.DrawString(_font, "Level 1", new Vector2(_level1ButtonRect.X + 10, _level1ButtonRect.Y + 15), Color.Black);
+            spriteBatch.Draw(_buttonTexture, _level1ButtonRect, Color.IndianRed);
+            spriteBatch.DrawString(_font, "Level 1", new Vector2(_level1ButtonRect.X + 30, _level1ButtonRect.Y + 10), Color.Black);
 
-            spriteBatch.Draw(_buttonTexture, _level2ButtonRect, Color.White);
-            spriteBatch.DrawString(_font, "Level 2", new Vector2(_level2ButtonRect.X + 10, _level2ButtonRect.Y + 15), Color.Black);
+            spriteBatch.Draw(_buttonTexture, _level2ButtonRect, Color.IndianRed);
+            spriteBatch.DrawString(_font, "Level 2", new Vector2(_level2ButtonRect.X + 30, _level2ButtonRect.Y + 10), Color.Black);
         }
     }
 }

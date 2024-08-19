@@ -4,16 +4,28 @@
   <Platform>Windows</Platform>
   <Config />
   <SourceFiles>
+    <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/AlienSpritesheet.png</File>
     <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/brush.png</File>
     <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/coin2_20x20.png</File>
+    <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/DawnBackground.png</File>
+    <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/DemonSpritesheet.png</File>
+    <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/FireTrap.png</File>
     <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/Font.spritefont</File>
     <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/GoblinMechRiderSpriteSheet.png</File>
     <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/Green Portal Sprite Sheet.png</File>
+    <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/Hover@3x.png</File>
     <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/Purple Portal Sprite Sheet.png</File>
     <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/ScoreFont.spritefont</File>
     <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/Tiles.png</File>
+    <File>C:/Users/Owen/Desktop/DamnedOfTheDeath/DamnedOfTheDeath/Content/TitleFont.spritefont</File>
   </SourceFiles>
   <DestFiles>
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
